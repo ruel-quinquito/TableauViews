@@ -1,0 +1,25 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadworkflowstep_g4
+(
+  workflowstep,
+  orderid,
+  toothnumber,
+  groupid,
+  operatorid,
+  durationseconds,
+  begintime,
+  endtime,
+  seqid
+)
+AS 
+ SELECT wf.workflowstep, wf.orderid, wf.toothnumber, wf.groupid, wf.operatorid, wf.durationseconds, wf.begintime, wf.endtime, wf.seqid
+   FROM ( SELECT x.workflowstep, x.orderid, x.groupid, x.groupname, x.hostname, x.operatorid, x.toothnumber, x.durationseconds, x.begintime, x.endtime, x.firstmessageid, x.lastmessageid, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY x.orderid, x.toothnumber, x.workflowstep
+          ORDER BY x.endtime) AS seqid
+           FROM ( SELECT DISTINCT m.workflowstep, m.orderidoriginator AS orderid, m.groupid, m.groupname, m.hostname, m.operatorid, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, m.durationseconds, ("left"(m.beginutctime::text, 10) + ' '::character varying::text + "substring"(m.beginutctime::text, 12, 8))::timestamp without time zone AS begintime, ("left"(m.endutctime::text, 10) + ' '::character varying::text + "substring"(m.endutctime::text, 12, 8))::timestamp without time zone AS endtime, m1.messageid AS firstmessageid, m.messageid AS lastmessageid
+                   FROM cp.fct_cadmessages m
+              LEFT JOIN tableau.opx_a_cadmessagetoothnumber_g4 t ON t.messageid = m.messageid
+         LEFT JOIN cp.fct_cadmessages m1 ON m1.orderidoriginator::text = m.orderidoriginator::text AND m1.operatorid::text = m1.operatorid::text AND m1.beginutctime::text = m.beginutctime::text AND m1.event::text <> 'Complete'::character varying::text AND m1.groupid::text = '440'::character varying::text
+        WHERE m.groupid::text = '440'::character varying::text AND (m.workflowstep::text = 'Scan'::character varying::text OR m.workflowstep::text = 'Design'::character varying::text) AND m.event::text = 'Complete'::character varying::text) x) wf;
+
+COMMIT;

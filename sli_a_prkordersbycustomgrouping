@@ -1,0 +1,24 @@
+CREATE OR REPLACE VIEW tableau.sli_a_prkordersbycustomgrouping
+(
+  orderid,
+  dateinvoiced,
+  yearinvoiced,
+  country,
+  billingcountry,
+  productid,
+  pf_productgroup,
+  jasoncategory,
+  pf_netsales
+)
+AS 
+ SELECT pf.orderid, pf.dateinvoiced, pf.yearinvoiced, a.country, a.billingcountry, pf.productid, pf.pf_productgroup, pg.customcategory AS jasoncategory, pf.pf_netsales
+   FROM cal.performanceforecast pf
+   JOIN dim.accounts a ON pf.doctorid::text = a.accountid::text
+   JOIN dim.prk_groupings pg ON upper(pf.productid::text) = upper(pg.productid::text);
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sli_a_prkordersbycustomgrouping TO cloudbeam;
+GRANT SELECT ON tableau.sli_a_prkordersbycustomgrouping TO _ops;
+
+
+COMMIT;

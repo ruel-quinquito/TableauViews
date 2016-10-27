@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opx_1y_accountstatusbyproductgroup
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  doctorid,
+  originfacilityid,
+  accountproductgroupstatusseqid,
+  orderid,
+  pf_productgroup,
+  productid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  productgroupfirst,
+  productgrouprestart,
+  productgrouprestartseqid,
+  productgrouplastinvoiced,
+  productgrouplastin
+)
+AS 
+ SELECT accountstatusbyproductgroup.recordinsertedlocaldts, accountstatusbyproductgroup.recordmodifiedlocaldts, accountstatusbyproductgroup.doctorid, accountstatusbyproductgroup.originfacilityid, accountstatusbyproductgroup.accountproductgroupstatusseqid, accountstatusbyproductgroup.orderid, accountstatusbyproductgroup.pf_productgroup, accountstatusbyproductgroup.productid, accountstatusbyproductgroup.dateinlocaldts, accountstatusbyproductgroup.dateinvoicedlocaldts, accountstatusbyproductgroup.productgroupfirst, accountstatusbyproductgroup.productgrouprestart, accountstatusbyproductgroup.productgrouprestartseqid, accountstatusbyproductgroup.productgrouplastinvoiced, accountstatusbyproductgroup.productgrouplastin
+   FROM cal.accountstatusbyproductgroup
+  WHERE accountstatusbyproductgroup.recordinsertedlocaldts >= '2014-01-01 00:00:00'::timestamp without time zone OR accountstatusbyproductgroup.recordmodifiedlocaldts >= '2014-01-01 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_1y_accountstatusbyproductgroup TO _anthonyo;
+GRANT SELECT ON tableau.opx_1y_accountstatusbyproductgroup TO executive;
+GRANT SELECT ON tableau.opx_1y_accountstatusbyproductgroup TO _lucy;
+GRANT SELECT ON tableau.opx_1y_accountstatusbyproductgroup TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_1y_accountstatusbyproductgroup TO cloudbeam;
+
+
+COMMIT;

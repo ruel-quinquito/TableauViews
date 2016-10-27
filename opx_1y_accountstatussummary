@@ -1,0 +1,55 @@
+CREATE OR REPLACE VIEW tableau.opx_1y_accountstatussummary
+(
+  reportdate,
+  originfacilityid,
+  groupby,
+  groupbyname,
+  statusgroup,
+  currentaccounts,
+  previousaccounts,
+  currentytdaccounts,
+  previousytdaccounts
+)
+AS 
+ SELECT x.reportdate, x.originfacilityid, x.groupby, x.groupbyname, x.statusgroup, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN cw.weektodateactive
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN cw.weektodatenew
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN cw.weektodaterestart
+            ELSE NULL::integer
+        END AS currentaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN pw.weektodateactive
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN pw.weektodatenew
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN pw.weektodaterestart
+            ELSE NULL::integer
+        END AS previousaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN cw.yeartodateactive
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN cw.yeartodatenew
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN cw.yeartodaterestart
+            ELSE NULL::integer
+        END AS currentytdaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN pw.yeartodateactive
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN pw.yeartodatenew
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN pw.yeartodaterestart
+            ELSE NULL::integer
+        END AS previousytdaccounts
+   FROM ( SELECT DISTINCT a.reportdate, a.originfacilityid, a.groupby, a.groupbyname, b.statusgroup
+           FROM sum.accountstatussummary_modified a
+      LEFT JOIN sum.weeklyaccountsummary b ON a.originfacilityid = b.facilityid) x
+   LEFT JOIN ( SELECT accountstatussummary_modified.reportdate, accountstatussummary_modified.originfacilityid, accountstatussummary_modified.groupby, accountstatussummary_modified.groupbyname, accountstatussummary_modified.weektodateactive, accountstatussummary_modified.weektodatenew, accountstatussummary_modified.weektodaterestart, accountstatussummary_modified.yeartodateactive, accountstatussummary_modified.yeartodatenew, accountstatussummary_modified.yeartodaterestart
+           FROM sum.accountstatussummary_modified
+          WHERE "date_part"('year'::character varying::text, accountstatussummary_modified.reportdate) = "date_part"('year'::character varying::text, 'now'::character varying::date)) cw ON x.reportdate = cw.reportdate AND x.originfacilityid = cw.originfacilityid AND x.groupby::text = cw.groupby::text AND x.groupbyname::text = cw.groupbyname::text
+   LEFT JOIN ( SELECT accountstatussummary_modified.reportdate, accountstatussummary_modified.originfacilityid, accountstatussummary_modified.groupby, accountstatussummary_modified.groupbyname, accountstatussummary_modified.weektodateactive, accountstatussummary_modified.weektodatenew, accountstatussummary_modified.weektodaterestart, accountstatussummary_modified.yeartodateactive, accountstatussummary_modified.yeartodatenew, accountstatussummary_modified.yeartodaterestart
+      FROM sum.accountstatussummary_modified
+     WHERE "date_part"('year'::character varying::text, accountstatussummary_modified.reportdate) = ("date_part"('year'::character varying::text, 'now'::character varying::date) - 1)) pw ON "date_part"('year'::character varying::text, x.reportdate) = ("date_part"('year'::character varying::text, pw.reportdate) + 1) AND "date_part"('month'::character varying::text, x.reportdate) = "date_part"('month'::character varying::text, pw.reportdate) AND "date_part"('week'::character varying::text, x.reportdate) = ("date_part"('week'::character varying::text, pw.reportdate) - 1) AND "date_part"('dow'::character varying::text, x.reportdate) = "date_part"('dow'::character varying::text, pw.reportdate) AND x.originfacilityid = pw.originfacilityid AND x.groupby::text = pw.groupby::text AND x.groupbyname::text = pw.groupbyname::text
+  WHERE cw.weektodateactive IS NOT NULL;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_1y_accountstatussummary TO cloudbeam;
+GRANT SELECT ON tableau.opx_1y_accountstatussummary TO operations;
+
+
+COMMIT;

@@ -1,0 +1,120 @@
+CREATE OR REPLACE VIEW tableau.opa_a_toothmilltracking
+(
+  orderid,
+  ordertype,
+  originlocationfacility,
+  datein,
+  panid,
+  doctorid,
+  patientfirstname,
+  patientlastname,
+  shade,
+  productid,
+  productidmilled,
+  quantity,
+  toothstr,
+  toothstrmilled,
+  isbridge,
+  isanterior,
+  maxdaysinlab,
+  actualdaysinlab,
+  daysremaining,
+  daysremaininggroup,
+  duedate,
+  labduedate,
+  productline,
+  productdepartment,
+  productsubdepartment,
+  locationzone,
+  locationfacilityid,
+  locationbuilding,
+  locationdepartment,
+  locationprocess,
+  locationprocessdescription,
+  locationcheckindate,
+  locationcheckoutdate,
+  lastassignedto,
+  lastassignmentstartdate,
+  millingcentername,
+  stepname,
+  statusname,
+  workflowtrackinginsertedlocaldts,
+  eventgroup,
+  locationname,
+  scannerserial,
+  applicationname,
+  scandts,
+  currentstatus,
+  statusdts,
+  rejectreason,
+  sourcesystem,
+  city
+)
+AS 
+ SELECT cl.orderid, cl.ordertype, cl.originlocationfacility, cl.datein, cl.panid, o.doctorid, o.patientfirstname, o.patientlastname, o.shade, cl.productid, cm.productid AS productidmilled, cl.quantity, "ts".toothstr, cm.toothstr AS toothstrmilled, cl.isbridge, cl.isanterior, cl.maxdaysinlab, cl.actualdaysinlab, cl.daysremaining, cl.daysremaininggroup, cl.duedate, cl.labduedate, cl.productline, cl.productdepartment, cl.productsubdepartment, cl.locationzone, cl.locationfacilityid, cl.locationbuilding, cl.locationdepartment, cl.locationprocess, cl.locationprocessdescription, cl.locationcheckindate, cl.locationcheckoutdate, cl.lastassignedto, cl.lastassignmentstartdate, t.millingcentername, z.stepname, t.statusname, t.workflowtrackinginsertedlocaldts, s.eventgroup, s.locationname, s.scannerserial, s.applicationname, s.enddtslocal AS scandts, cdcs.currentstatus, cdcs.enddtslocal AS statusdts, cdcs.rejectreason, o1.sourcesystem, o.shipaddresscity AS city
+   FROM cal.caselocation cl
+   JOIN fct."order" o ON o.orderid = cl.orderid AND o.dateinvoicedlocaldts IS NULL
+   JOIN cal."order" o1 ON o1.orderid = o.orderid
+   LEFT JOIN ( SELECT wft.orderid, wft.millingcentername, wft.workflowtrackinginsertedlocaldts, wft.stepname, wft.statusname
+   FROM fct.workflowtracking wft
+   JOIN fct."order" o ON o.orderid = wft.orderid
+  WHERE wft.laststep::text = 1::character varying::text AND o.dateinvoicedlocaldts IS NULL) t ON t.orderid = cl.orderid
+   LEFT JOIN ( SELECT cdc.caseid, cdc.eventgroup, cdc.enddtslocal, cdc.locationname, cdc.scannerserial, cdc.applicationname
+   FROM fct.centralizeddesigns cdc
+   JOIN ( SELECT cdc.caseid, "max"(cdc.seqid) AS seqid
+           FROM fct.centralizeddesigns cdc
+      JOIN fct."order" o ON cdc.caseid = o.orderid
+     WHERE o.dateinvoicedlocaldts IS NULL AND cdc.eventgroup::text = 'Scan'::character varying::text
+     GROUP BY cdc.caseid) cdc1 ON cdc1.caseid = cdc.caseid AND cdc1.seqid = cdc.seqid) s ON cl.orderid = s.caseid
+   LEFT JOIN ( SELECT cdc.caseid, 
+        CASE
+            WHEN (
+            CASE
+                WHEN cdc.eventgroup::text ~~ 'QC%'::character varying::text THEN 'QC'::character varying
+                ELSE cdc.eventgroup
+            END::text + '/Complete'::character varying::text) = cdc.endevent::text THEN 
+            CASE
+                WHEN cdc.eventgroup::text = 'QC1'::character varying::text THEN 'qc 1 complete'::character varying::text
+                WHEN cdc.eventgroup::text = 'QC2'::character varying::text THEN 'qc 2 complete'::character varying::text
+                ELSE lower(cdc.eventgroup::text) + ' complete'::character varying::text
+            END
+            WHEN (
+            CASE
+                WHEN cdc.eventgroup::text ~~ 'QC%'::character varying::text THEN 'QC'::character varying
+                ELSE cdc.eventgroup
+            END::text + '/Reject'::character varying::text) = cdc.endevent::text THEN 
+            CASE
+                WHEN cdc.eventgroup::text = 'QC1'::character varying::text THEN 'qc 1 reject'::character varying::text
+                WHEN cdc.eventgroup::text = 'QC2'::character varying::text THEN 'qc 2 reject'::character varying::text
+                WHEN cdc.eventgroup::text = 'Design'::character varying::text THEN 'scan reject'::character varying::text
+                ELSE lower(cdc.eventgroup::text) + ' reject'::character varying::text
+            END
+            ELSE lower(cdc.eventgroup::text) + ' pending'::character varying::text
+        END AS currentstatus, cdc.enddtslocal, cdc.rejectreason
+   FROM fct.centralizeddesigns cdc
+   JOIN ( SELECT cdc.caseid, "max"(cdc.seqid) AS seqid
+           FROM fct.centralizeddesigns cdc
+      JOIN fct."order" o ON cdc.caseid = o.orderid
+     WHERE o.dateinvoicedlocaldts IS NULL
+     GROUP BY cdc.caseid) cs ON cs.caseid = cdc.caseid AND cs.seqid = cdc.seqid) cdcs ON cdcs.caseid = cl.orderid
+   LEFT JOIN ( SELECT x.orderid, x.productid, x.toothstr
+   FROM ( SELECT oi.orderid, oi.productid, oi.toothstr, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY oi.orderid, oi.productid
+          ORDER BY oi.orderproductid) AS seqid
+           FROM fct.orderitem oi
+      JOIN fct."order" o ON o.orderid = oi.orderid
+     WHERE o.dateinvoicedlocaldts IS NULL AND oi.toothstr::text > ''::character varying::text) x
+  WHERE x.seqid = 1) "ts" ON "ts".orderid = cl.orderid AND "ts".productid::text = cl.productid::text
+   LEFT JOIN fct.centralizedmilling cm ON cm.orderid = cl.orderid
+   LEFT JOIN ( SELECT y.orderid, y.toothstr, y.toothmask, y.stepname
+   FROM ( SELECT cm.orderid, cm.toothstr, cm.toothmask, wf.stepname, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY cm.orderid, cm.toothstr
+          ORDER BY wf.workflowseqid DESC) AS rownum
+           FROM fct.centralizedmilling cm
+      LEFT JOIN fct.workflowtracking wf ON cm.orderid = wf.orderid AND cm.toothmask = wf.toothmask) y
+  WHERE y.rownum = 1) z ON z.orderid = cm.orderid AND z.toothmask = cm.toothmask
+  WHERE cl.lastlocation::text = 1::character varying::text AND o.ordertypeid <> 4;
+
+COMMIT;

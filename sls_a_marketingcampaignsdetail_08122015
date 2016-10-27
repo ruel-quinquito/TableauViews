@@ -1,0 +1,61 @@
+CREATE OR REPLACE VIEW tableau.sls_a_marketingcampaignsdetail_08122015
+(
+  orderid,
+  originfacility,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  inhousesale,
+  ordertype,
+  quantity,
+  unitprice,
+  discount,
+  totalcharge,
+  totaltax,
+  coupondiscountid,
+  coupondescription,
+  couponlettersprojectcode,
+  lettersprojectdescription,
+  couponmarketingtype,
+  couponfacilityintendedfor,
+  coupondiscounttype,
+  coupondiscountamount,
+  couponprojectcost,
+  couponsentamount,
+  couponsentdate,
+  productid,
+  productdescription,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  pf_departmentid,
+  pf_isactualunit,
+  doctorid,
+  doctorfirstname,
+  doctorlastname,
+  doctorcity,
+  doctorcountry,
+  doctorcustomercategory,
+  doctorpracticename,
+  doctorstate,
+  doctorzipcode,
+  doctoractive,
+  istestdoctor
+)
+AS 
+ SELECT oi.orderid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.inhousesale, o.ordertype, oi.quantity, oi.unitprice, oi.discount, oi.totalcharge, oi.totaltax, oi.discountid AS coupondiscountid, mc.coupondescription, mc.lettersprojectcode AS couponlettersprojectcode, mc.lettersprojectdescription, mc.marketingtype AS couponmarketingtype, mc.redeemedatfacility AS couponfacilityintendedfor, mc.discounttype AS coupondiscounttype, mc.discountamount AS coupondiscountamount, mc.projectcost AS couponprojectcost, mc.sentamount AS couponsentamount, mc.sentdate AS couponsentdate, p.productid, p.description AS productdescription, p.pf_productgroup, p.pf_productline, p.pf_producttype, p.pf_departmentid, p.pf_isactualunit, d.doctorid, d.firstname AS doctorfirstname, d.lastname AS doctorlastname, d.city AS doctorcity, d.country AS doctorcountry, d.customercategory AS doctorcustomercategory, d.practicename AS doctorpracticename, d.state AS doctorstate, d.zipcode AS doctorzipcode, d.active AS doctoractive, d.istestdoctor
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid AND o.dateinlocaldts >= '2012-01-01 00:00:00'::timestamp without time zone AND oi.discountid IS NOT NULL
+   JOIN dim.products p ON upper(oi.productid::text)::character varying::text = upper(p.productid::text)::character varying::text
+   LEFT JOIN fct.marketingcampaign mc ON oi.discountid::text = mc.couponcode::text
+   LEFT JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+   LEFT JOIN ( SELECT marketingcampaign.lettersprojectcode, count(marketingcampaign.couponcode) AS ctdiv
+   FROM fct.marketingcampaign
+  GROUP BY marketingcampaign.lettersprojectcode) xx ON mc.lettersprojectcode::text = xx.lettersprojectcode::text;
+
+
+GRANT SELECT ON tableau.sls_a_marketingcampaignsdetail_08122015 TO _anthonyo;
+GRANT SELECT ON tableau.sls_a_marketingcampaignsdetail_08122015 TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_a_marketingcampaignsdetail_08122015 TO cloudbeam;
+
+
+COMMIT;

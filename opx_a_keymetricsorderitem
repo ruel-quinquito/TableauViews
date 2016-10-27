@@ -1,0 +1,62 @@
+CREATE OR REPLACE VIEW tableau.opx_a_keymetricsorderitem
+(
+  orderid,
+  ordertypeid,
+  transactiontype,
+  originfacilityid,
+  originfacility,
+  productionfacilityid,
+  productionfacility,
+  orderproductid,
+  discountid,
+  remakeof,
+  remakeofdateinlocaldts,
+  remakeofdateinvoicedlocaldts,
+  remakeid,
+  reasonid,
+  reason,
+  reasoncategory,
+  gotreturned,
+  daysbeforereturn,
+  returnquantity,
+  toothlocation,
+  toothtype,
+  toothmask,
+  isanterior,
+  productid,
+  salescategory,
+  backloggroup,
+  remakecategory,
+  pf_departmentid,
+  pf_producttype,
+  pf_productline,
+  pf_productgroup,
+  pf_isactualunit,
+  daysinlab,
+  toothstr,
+  quantity,
+  unitprice,
+  grosssales,
+  discount,
+  totaltax,
+  netsales,
+  totalcharge
+)
+AS 
+ SELECT elektraorderitem.orderid, elektraorderitem.ordertypeid, NULL::"unknown" AS transactiontype, elektraorderitem.originfacilityid, elektraorderitem.originfacility, elektraorderitem.productionfacilityid, elektraorderitem.productionfacility, elektraorderitem.orderproductid, elektraorderitem.discountid, elektraorderitem.remakeof, elektraorderitem.remakeofdateinlocaldts, elektraorderitem.remakeofdateinvoicedlocaldts, elektraorderitem.remakeid, elektraorderitem.reasonid::character varying(30) AS reasonid, elektraorderitem.reason, elektraorderitem.reasoncategory, elektraorderitem.gotreturned, elektraorderitem.daysbeforereturn, elektraorderitem.returnquantity, elektraorderitem.toothlocation, elektraorderitem.toothtype, elektraorderitem.toothmask, elektraorderitem.isanterior, elektraorderitem.productid, elektraorderitem.salescategory, elektraorderitem.backloggroup, elektraorderitem.remakecategory, elektraorderitem.pf_departmentid, elektraorderitem.pf_producttype, elektraorderitem.pf_productline, elektraorderitem.pf_productgroup, elektraorderitem.pf_isactualunit, elektraorderitem.daysinlab, elektraorderitem.toothstr, elektraorderitem.quantity, elektraorderitem.unitprice, elektraorderitem.grosssales, elektraorderitem.discount, elektraorderitem.totaltax, elektraorderitem.netsales, elektraorderitem.totalcharge
+   FROM cal.elektraorderitem
+  WHERE elektraorderitem.originfacilityid = 65 OR elektraorderitem.originfacilityid = 101 OR elektraorderitem.originfacilityid = 100 OR elektraorderitem.originfacilityid = 102 OR elektraorderitem.originfacilityid = 103 OR elektraorderitem.originfacilityid = 104
+UNION 
+ SELECT oig.orderid::character varying(200) AS orderid, NULL::"unknown" AS ordertypeid, oig.transactiontype, oig.originfacilityid, oig.originfacility, oig.productionfacilityid, oig.productionfacility::character varying(20) AS productionfacility, oig.orderproductid, oig.discountid, og.remakeof::character varying AS remakeof, og.dateinlocaldts AS remakeofdateinlocaldts, og.dateinvoicedlocaldts AS remakeofdateinvoicedlocaldts, oig.remakeid, oig.reasonid, oig.remakereason AS reason, NULL::"unknown" AS reasoncategory, NULL::"unknown" AS gotreturned, NULL::"unknown" AS daysbeforereturn, NULL::"unknown" AS returnquantity, NULL::"unknown" AS toothlocation, NULL::"unknown" AS toothtype, NULL::"unknown" AS toothmask, NULL::"unknown" AS isanterior, oig.productid, NULL::"unknown" AS salescategory, NULL::"unknown" AS backloggroup, NULL::"unknown" AS remakecategory, NULL::"unknown" AS pf_departmentid, NULL::"unknown" AS pf_producttype, COALESCE(gp.pf_productline, 'OTHER'::character varying) AS pf_productline, COALESCE(gp.pf_productgroup, 'OTHER'::character varying) AS pf_productgroup, gp.pf_isactualunit, NULL::"unknown" AS daysinlab, oig.toothstr, oig.quantity, oig.unitprice, (oig.quantity * oig.unitprice)::numeric(18,0) AS grosssales, oig.discount, oig.totaltax, (oig.totalcharge - oig.totaltax)::numeric(18,0) AS netsales, oig.totalcharge
+   FROM fct.orderitemgermany oig
+   LEFT JOIN dim.products gp ON oig.productid::text = gp.productid::text
+   LEFT JOIN fct.ordergermany og ON oig.orderid::character varying::text = og.orderid::character varying::text;
+
+
+GRANT SELECT ON tableau.opx_a_keymetricsorderitem TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_keymetricsorderitem TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_keymetricsorderitem TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_keymetricsorderitem TO _ops;
+
+
+COMMIT;

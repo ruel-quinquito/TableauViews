@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.opx_ytd_targetaccountsforctscan
+(
+  doctorid,
+  digitaltotalcharge,
+  physicaltotalcharge,
+  digitalquantity,
+  physicalquantity,
+  totalcharge,
+  keep
+)
+AS 
+ SELECT x.doctorid, x.digitaltotalcharge, x.physicaltotalcharge, x.digitalquantity, x.physicalquantity, x.totalcharge, 
+        CASE
+            WHEN x.digitaltotalcharge > 0::numeric AND x.physicaltotalcharge > 0::numeric THEN 1
+            ELSE 0
+        END AS keep
+   FROM ( SELECT order360infobypart.doctorid, sum(
+                CASE
+                    WHEN order360infobypart.sourcesystem IS NOT NULL AND order360infobypart.parttotalcharge > 0::numeric(19,4) THEN order360infobypart.parttotalcharge
+                    ELSE 0::numeric
+                END) AS digitaltotalcharge, sum(
+                CASE
+                    WHEN order360infobypart.sourcesystem IS NULL AND order360infobypart.parttotalcharge > 0::numeric(19,4) THEN order360infobypart.parttotalcharge
+                    ELSE 0::numeric
+                END) AS physicaltotalcharge, sum(
+                CASE
+                    WHEN order360infobypart.sourcesystem IS NOT NULL AND order360infobypart.parttotalcharge > 0::numeric(19,4) THEN order360infobypart.partquantity
+                    ELSE 0::numeric
+                END) AS digitalquantity, sum(
+                CASE
+                    WHEN order360infobypart.sourcesystem IS NULL AND order360infobypart.parttotalcharge > 0::numeric(19,4) THEN order360infobypart.partquantity
+                    ELSE 0::numeric
+                END) AS physicalquantity, sum(order360infobypart.parttotalcharge) AS totalcharge
+           FROM agg.order360infobypart
+          WHERE order360infobypart.dateinvoiceddtslocal >= date_trunc('year'::text, getdate()) AND order360infobypart.originfacilityid = 10 AND order360infobypart.pf_departmentid::text = 'FIXED'::text AND order360infobypart.pf_productline::text = 'BRUXZIR'::text AND order360infobypart.pf_productgroup::text <> 'COMBO BRUXZIR'::text AND order360infobypart.pf_productgroup::text <> 'COMBO BRUXZIR ANTERIOR'::text AND order360infobypart.pf_productgroup::text <> 'IMP BRUX FULL ARCH'::text AND order360infobypart.pf_productgroup::text <> 'IMPLANT CRNS BRUXZIR'::text AND order360infobypart.pf_productgroup::text <> 'IMPLANT CRNS BRUXZIRANT'::text AND order360infobypart.pf_productgroup::text <> 'IMPLANT SS BRUXZIR'::text AND order360infobypart.pf_productgroup::text <> 'IMPLANT SS BRUXZIRANT'::text AND order360infobypart.transactiontype::text = 'New'::text AND order360infobypart.pf_isactualunit::text = 1::text
+          GROUP BY order360infobypart.doctorid) x;
+
+COMMIT;

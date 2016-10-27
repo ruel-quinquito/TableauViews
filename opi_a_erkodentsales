@@ -1,0 +1,63 @@
+CREATE OR REPLACE VIEW tableau.opi_a_erkodentsales
+(
+  doctorid,
+  customercategory,
+  originfacilityid,
+  city,
+  state,
+  zipcode,
+  country,
+  pf_departmentid,
+  pf_productline,
+  pf_producttype,
+  pf_productgroup,
+  date,
+  totalnetsales,
+  digitalnetsales,
+  grosssales,
+  totaldiscount,
+  totalremakediscount,
+  totaltax,
+  totalcharge,
+  nosalesoneyear,
+  salesafteronemonth
+)
+AS 
+ SELECT a.doctorid, a.customercategory, a.originfacilityid, a.city, a.state, a.zipcode, a.country, a.pf_departmentid, a.pf_productline, a.pf_producttype, a.pf_productgroup, a.date, a.totalnetsales, a.digitalnetsales, a.grosssales, a.totaldiscount, a.totalremakediscount, a.totaltax, a.totalcharge, b.nosalesoneyear, b.salesafteronemonth
+   FROM sum.monthlysalesaccountpfgroupings a
+   LEFT JOIN ( SELECT x.doctorid, x.date, 
+                CASE
+                    WHEN y.date IS NOT NULL THEN 1
+                    ELSE 0
+                END AS nosalesoneyear, count(z.date) AS salesafteronemonth
+           FROM ( SELECT monthlysalesaccountpfgroupings.doctorid, monthlysalesaccountpfgroupings.date, pg_catalog.row_number()
+                  OVER( 
+                  PARTITION BY monthlysalesaccountpfgroupings.doctorid
+                  ORDER BY monthlysalesaccountpfgroupings.date DESC) AS row_num
+                   FROM sum.monthlysalesaccountpfgroupings
+                  WHERE monthlysalesaccountpfgroupings.pf_productline::text = 'erkodent'::text) x
+      JOIN ( SELECT monthlysalesaccountpfgroupings.doctorid, monthlysalesaccountpfgroupings.date, pg_catalog.row_number()
+                  OVER( 
+                  PARTITION BY monthlysalesaccountpfgroupings.doctorid
+                  ORDER BY monthlysalesaccountpfgroupings.date DESC) AS row_num
+                   FROM sum.monthlysalesaccountpfgroupings
+                  WHERE monthlysalesaccountpfgroupings.pf_productline::text = 'erkodent'::text) y ON x.doctorid::text = y.doctorid::text AND x.row_num = (y.row_num - 1) AND date_diff('month'::text, y.date, x.date) >= 12
+   LEFT JOIN ( SELECT monthlysalesaccountpfgroupings.doctorid, monthlysalesaccountpfgroupings.date, pg_catalog.row_number()
+             OVER( 
+             PARTITION BY monthlysalesaccountpfgroupings.doctorid
+             ORDER BY monthlysalesaccountpfgroupings.date DESC) AS row_num
+              FROM sum.monthlysalesaccountpfgroupings
+             WHERE monthlysalesaccountpfgroupings.pf_productline::text = 'erkodent'::text) z ON x.doctorid::text = z.doctorid::text AND date_diff('month'::text, x.date, z.date) = 1
+  GROUP BY x.doctorid, x.date, y.date) b ON a.doctorid::text = b.doctorid::text AND a.date = b.date
+  WHERE a.pf_productline::text = 'erkodent'::text;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opi_a_erkodentsales TO _tableau;
+GRANT SELECT ON tableau.opi_a_erkodentsales TO _anthonyo;
+GRANT SELECT ON tableau.opi_a_erkodentsales TO _lucy;
+GRANT SELECT ON tableau.opi_a_erkodentsales TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_a_erkodentsales TO cloudbeam;
+GRANT SELECT ON tableau.opi_a_erkodentsales TO _ops;
+
+
+COMMIT;

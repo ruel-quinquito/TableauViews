@@ -1,0 +1,70 @@
+CREATE OR REPLACE VIEW tableau.opi_a_shippedorders
+(
+  caseid,
+  inboundcarrier,
+  inboundtrackingnumber,
+  entereddate,
+  outboundcarrier,
+  outboundtrackingnumber,
+  shippedoutdate,
+  invoiceddate,
+  productid,
+  price,
+  quantity,
+  shiptype,
+  casetype,
+  remakeid,
+  linkedto
+)
+AS 
+ SELECT s.orderid AS caseid, 
+        CASE
+            WHEN s.isreturn::text = 'true'::character varying::text THEN s.carriername
+            ELSE NULL::character varying
+        END AS inboundcarrier, 
+        CASE
+            WHEN s.isreturn::text = 'true'::character varying::text THEN s.trackingnumber
+            ELSE NULL::character varying
+        END AS inboundtrackingnumber, o.dateinvoicedlocaldts AS entereddate, 
+        CASE
+            WHEN s.isreturn::text = 'false'::character varying::text THEN s.carriername
+            ELSE NULL::character varying
+        END AS outboundcarrier, 
+        CASE
+            WHEN s.isreturn::text = 'false'::character varying::text THEN s.trackingnumber
+            ELSE NULL::character varying
+        END AS outboundtrackingnumber, s.shipmentdate AS shippedoutdate, o.dateinvoicedlocaldts AS invoiceddate, oi.productid, s.cost AS price, oi.quantity, NULL::"unknown" AS shiptype, NULL::"unknown" AS casetype, NULL::"unknown" AS remakeid, NULL::"unknown" AS linkedto
+   FROM fct.elektra_shipping s
+   LEFT JOIN fct."order" o ON s.orderid::text = o.orderid::character varying::text
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+UNION 
+ SELECT s.orderid AS caseid, 
+        CASE
+            WHEN s.isreturn::text = 'true'::character varying::text THEN s.carriername
+            ELSE NULL::character varying
+        END AS inboundcarrier, 
+        CASE
+            WHEN s.isreturn::text = 'true'::character varying::text THEN s.trackingnumber
+            ELSE NULL::character varying
+        END AS inboundtrackingnumber, eo.dateinvoicedlocaldts AS entereddate, 
+        CASE
+            WHEN s.isreturn::text = 'false'::character varying::text THEN s.carriername
+            ELSE NULL::character varying
+        END AS outboundcarrier, 
+        CASE
+            WHEN s.isreturn::text = 'false'::character varying::text THEN s.trackingnumber
+            ELSE NULL::character varying
+        END AS outboundtrackingnumber, s.shipmentdate AS shippedoutdate, eo.dateinvoicedlocaldts AS invoiceddate, eoi.productid, s.cost AS price, eoi.quantity, NULL::"unknown" AS shiptype, NULL::"unknown" AS casetype, NULL::"unknown" AS remakeid, NULL::"unknown" AS linkedto
+   FROM fct.elektra_shipping s
+   LEFT JOIN cal.elektraorder eo ON s.orderid::text = eo.orderid::text
+   JOIN cal.elektraorderitem eoi ON eo.orderid::text = eoi.orderid::text;
+
+
+GRANT TRIGGER, RULE, DELETE, INSERT, SELECT, REFERENCES, UPDATE ON tableau.opi_a_shippedorders TO _anthonyo;
+GRANT SELECT ON tableau.opi_a_shippedorders TO _lucy;
+GRANT SELECT ON tableau.opi_a_shippedorders TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_a_shippedorders TO cloudbeam;
+GRANT SELECT ON tableau.opi_a_shippedorders TO _ops;
+
+
+COMMIT;

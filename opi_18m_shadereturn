@@ -1,0 +1,27 @@
+CREATE OR REPLACE VIEW tableau.opi_18m_shadereturn
+(
+  originfacility,
+  productionfacilityid,
+  departmentid,
+  question,
+  answer,
+  answerclass,
+  shade,
+  evalreturneddate,
+  toothlocation,
+  toothtype,
+  pf_productline,
+  pf_productgroup,
+  orderid
+)
+AS 
+ SELECT a.originfacility, b.productionfacilityid, a.departmentid, a.question, a.answer, a.answerclass, b.shade, a.evalreturneddate, b.toothlocation, b.toothtype, b.pf_productline, b.pf_productgroup, b.orderid
+   FROM tableau.opi_18m_evaldetails a
+   LEFT JOIN tableau.opx_a_360view b ON a.orderid::text = b.orderid::character varying::text AND a.orderproductid = b.orderproductid;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opi_18m_shadereturn TO cloudbeam;
+GRANT SELECT ON tableau.opi_18m_shadereturn TO operations;
+
+
+COMMIT;

@@ -1,0 +1,70 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadautoproposalsummary_g4
+(
+  gotreturned,
+  pf_departmentid,
+  pf_isactualunit,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  productid,
+  returnitemremakereason,
+  returnitemremakereasoncategory,
+  returnremakeid,
+  returntype,
+  shade,
+  toothlocation,
+  toothtype,
+  transactiontype,
+  daysbeforereturn,
+  originfacilityid,
+  productionfacilityid,
+  autoproposal,
+  orderid,
+  ordertypeid,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  toothnumber,
+  groupid,
+  groupname,
+  hostname,
+  operatorid,
+  begintime,
+  endtime,
+  totaldurationseconds,
+  rejectcount,
+  scancount,
+  scandurationseconds,
+  designcount,
+  designdurationseconds,
+  overallcaseevaluation,
+  fastdesign,
+  "3shape",
+  automatedmilling,
+  manualmilling
+)
+AS 
+ SELECT 0 AS gotreturned, '' AS pf_departmentid, '' AS pf_isactualunit, '' AS pf_productgroup, '' AS pf_productline, '' AS pf_producttype, '' AS productid, '' AS returnitemremakereason, '' AS returnitemremakereasoncategory, '' AS returnremakeid, '' AS returntype, '' AS shade, '' AS toothlocation, '' AS toothtype, '' AS transactiontype, '' AS daysbeforereturn, '' AS originfacilityid, '' AS productionfacilityid, x.autoproposal, x.orderid, x.ordertypeid, x.doctorid, x.dateinlocaldts, x.dateinvoicedlocaldts, x.toothnumber, x.groupid, x.groupname, x.hostname, x.operatorid, x.begintime, x.endtime, x.totaldurationseconds, x.rejectcount, x.scancount, x.scandurationseconds, x.designcount, x.designdurationseconds, x.overallcaseevaluation, x.fastdesign, x."3shape", x.automatedmilling, x.manualmilling
+   FROM ( SELECT s.autoproposal, s.orderid, s.ordertypeid, s.doctorid, s.dateinlocaldts, s.dateinvoicedlocaldts, s.toothnumber, s.groupid, s.groupname, s.hostname, s.operatorid, s.begintime, s.endtime, s.totaldurationseconds, ( SELECT COALESCE(count(1), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadreject_g4 r
+                  WHERE r.orderid::text = s.orderid::text AND r.toothnumber::text = s.toothnumber::text AND r.groupid::text = s.groupid::text AND r.operatorid::text = s.operatorid::text AND r.endtime = s.endtime AND r.groupid::text = '440'::text) AS rejectcount, ( SELECT COALESCE(count(sc.seqid), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Scan'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime AND sc.groupid::text = '440'::text) AS scancount, ( SELECT COALESCE(sum(sc.durationseconds::numeric), 0::numeric) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Scan'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime AND sc.groupid::text = '440'::text) AS scandurationseconds, ( SELECT COALESCE(count(sc.seqid), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Design'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime AND sc.groupid::text = '440'::text) AS designcount, ( SELECT COALESCE(sum(sc.durationseconds::numeric), 0::numeric) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Design'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime AND sc.groupid::text = '440'::text) AS designdurationseconds, ''::character varying AS overallcaseevaluation, 0 AS fastdesign, 0 AS "3shape", 0 AS automatedmilling, 0 AS manualmilling
+           FROM tableau.opx_a_cadmessagesummary s
+          WHERE s.autoproposal = 1) x
+  WHERE x.groupid::text = '440'::text AND x.begintime >= '2016-04-05 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary_g4 TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary_g4 TO _lucy;
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary_g4 TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadautoproposalsummary_g4 TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,60 @@
+CREATE OR REPLACE VIEW tableau.hr_employee_previoustransferdept
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  gpdb,
+  gpdbid,
+  employeeid,
+  lastname,
+  firstname,
+  nickname,
+  gender,
+  maritalstatus,
+  birthdate,
+  company,
+  location,
+  division,
+  dpartmentcode,
+  department,
+  jobtitle,
+  employmenttype,
+  hrstatus,
+  hrnote,
+  changedate,
+  changereason,
+  effectivebegindate,
+  effectiveenddate,
+  originalhiredate,
+  lastdateworked,
+  adjustedhiredate,
+  senioritydate,
+  supervisordescription,
+  supervisoremployeeid,
+  supervisorjobtitle,
+  supervisorlastname,
+  supervisorfirstname,
+  supervisornickname,
+  supervisordepartment,
+  recordsequence,
+  divisionid,
+  locationid,
+  facilityid,
+  buildingname,
+  isdirectlaborcurrent,
+  workshiftcurrent
+)
+AS 
+ SELECT f.recordinsertedlocaldts, f.recordmodifiedlocaldts, f.gpdb, f.gpdbid, f.employeeid, f.lastname, f.firstname, f.nickname, f.gender, f.maritalstatus, f.birthdate, f.company, f."location", f.division, f.dpartmentcode, f.department, f.jobtitle, f.employmenttype, f.hrstatus, f.hrnote, f.changedate, f.changereason, f.effectivebegindate, f.effectiveenddate, f.originalhiredate, f.lastdateworked, f.adjustedhiredate, f.senioritydate, f.supervisordescription, f.supervisoremployeeid, f.supervisorjobtitle, f.supervisorlastname, f.supervisorfirstname, f.supervisornickname, f.supervisordepartment, f.recordsequence, f.divisionid, f.locationid, f.facilityid, f.buildingname, f.isdirectlaborcurrent, f.workshiftcurrent
+   FROM hr.fct_gpemployeestatushistory f
+   JOIN ( SELECT fct_gpemployeestatushistory.employeeid, fct_gpemployeestatushistory.recordsequence
+           FROM hr.fct_gpemployeestatushistory
+          WHERE upper(fct_gpemployeestatushistory.changereason::text) ~~ '%TRANSFER%'::character varying::text AND fct_gpemployeestatushistory.changedate > date_add('year'::character varying::text, - 2::bigint, getdate())) x ON f.employeeid::text = x.employeeid::text AND f.recordsequence = (x.recordsequence + 1)
+  ORDER BY f.employeeid, f.recordsequence;
+
+
+GRANT SELECT ON tableau.hr_employee_previoustransferdept TO _hr;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.hr_employee_previoustransferdept TO cloudbeam;
+GRANT SELECT ON tableau.hr_employee_previoustransferdept TO _ops;
+
+
+COMMIT;
