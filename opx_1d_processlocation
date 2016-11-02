@@ -1,0 +1,73 @@
+CREATE OR REPLACE VIEW tableau.opx_1d_processlocation
+(
+  orderid,
+  processlabellocationid,
+  invoiced,
+  originlocationfacilityid,
+  originlocationbuilding,
+  originlocationdepartment,
+  originlocationzone,
+  originlocationprocess,
+  originlocationprocessdescription,
+  currentlocationfacilityid,
+  currentlocationbuilding,
+  currentlocationdepartment,
+  currentlocationzone,
+  currentlocationprocess,
+  currentlocationprocessdescription,
+  currentlocationcheckindate,
+  currentlocationcheckoutdate,
+  assignmentcount,
+  firstassignedto,
+  firstassignmentstartdate,
+  firstassignmentcompleteddate,
+  lastassignedto,
+  lastassignmentstartdate,
+  lastassignmentcompleteddate,
+  datein,
+  duedate,
+  dateinvoiced,
+  rush,
+  pannumber,
+  panid,
+  maxdaysinlab,
+  labduedate,
+  actualdaysinlab,
+  daysremaining,
+  productfacilityid,
+  productdepartment,
+  productsubdepartment,
+  productline,
+  productgroup,
+  productid,
+  quantity,
+  daysremaininggroup
+)
+AS 
+ SELECT a.orderid, a.processlabellocationid, 0 AS invoiced, a.originlocationfacilityid, a.originlocationbuilding, a.originlocationdepartment, a.originlocationzone, a.originlocationprocess, a.originlocationprocessdescription, a.currentlocationfacilityid, a.currentlocationbuilding, a.currentlocationdepartment, a.currentlocationzone, a.currentlocationprocess, a.currentlocationprocessdescription, a.currentlocationcheckindate, a.currentlocationcheckoutdate, a.assignmentcount, a.firstassignedto, a.firstassignmentstartdate, a.firstassignmentcompleteddate, a.lastassignedto, a.lastassignmentstartdate, a.lastassignmentcompleteddate, a.datein, a.duedate, a.dateinvoiced, a.rush, a.pannumber, a.panid, a.maxdaysinlab, a.labduedate, a.actualdaysinlab, a.daysremaining, a.productfacilityid, p.departmentid AS productdepartment, a.productsubdepartment, p.pf_productline AS productline, p.pf_productgroup AS productgroup, a.productid, a.quantity, 
+        CASE
+            WHEN a.daysremaining >= 5 THEN '5+ days'::text
+            WHEN a.daysremaining < 0 THEN 'past due'::text
+            ELSE a.daysremaining::character varying(10)::text + ' days'::text
+        END::character varying AS daysremaininggroup
+   FROM sum.caselocation_activecaseslastlocation a
+   LEFT JOIN dim.products p ON a.productid::text = p.productid::text
+UNION 
+ SELECT a.orderid, a.processlabellocationid, 1 AS invoiced, a.originlocationfacilityid, a.originlocationbuilding, a.originlocationdepartment, a.originlocationzone, a.originlocationprocess, a.originlocationprocessdescription, a.currentlocationfacilityid, a.currentlocationbuilding, a.currentlocationdepartment, a.currentlocationzone, a.currentlocationprocess, a.currentlocationprocessdescription, a.currentlocationcheckindate, a.currentlocationcheckoutdate, a.assignmentcount, a.firstassignedto, a.firstassignmentstartdate, a.firstassignmentcompleteddate, a.lastassignedto, a.lastassignmentstartdate, a.lastassignmentcompleteddate, a.datein, a.duedate, a.dateinvoiced, a.rush, a.pannumber, a.panid, a.maxdaysinlab, a.labduedate, a.actualdaysinlab, a.daysremaining, a.productfacilityid, p.departmentid AS productdepartment, a.productsubdepartment, p.pf_productline AS productline, p.pf_productgroup AS productgroup, a.productid, a.quantity, 
+        CASE
+            WHEN a.daysremaining >= 5 THEN '5+ days'::text
+            WHEN a.daysremaining < 0 THEN 'past due'::text
+            ELSE a.daysremaining::character varying(10)::text + ' days'::text
+        END::character varying AS daysremaininggroup
+   FROM sum.caselocation_invoicedtoday a
+   LEFT JOIN dim.products p ON a.productid::text = p.productid::text;
+
+
+GRANT SELECT ON tableau.opx_1d_processlocation TO _anthonyo;
+GRANT SELECT ON tableau.opx_1d_processlocation TO _lucy;
+GRANT SELECT ON tableau.opx_1d_processlocation TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_1d_processlocation TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opx_1d_processlocation TO _ops;
+
+
+COMMIT;

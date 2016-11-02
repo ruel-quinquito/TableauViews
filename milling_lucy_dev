@@ -1,0 +1,37 @@
+CREATE OR REPLACE VIEW tableau.milling_lucy_dev
+(
+  queue,
+  orderid,
+  materialname,
+  enddate,
+  unitcount
+)
+AS 
+ SELECT DISTINCT x.queue, x.casereference AS orderid, x.materialname, 
+        CASE
+            WHEN x.queue::text = 'Manual'::text THEN man.restoration_updatedate
+            WHEN x.queue::text = 'Autopilot'::text AND len(mj.millinginfo_millingend::text) >= 19 THEN "replace"("left"(mj.millinginfo_millingend::text, 19), 'T'::character varying::text, ' '::character varying::text)::timestamp without time zone
+            ELSE NULL::timestamp without time zone
+        END AS enddate, xx.distinctrestorations AS unitcount
+   FROM import.fct_milltrackermillingjob mj
+   JOIN ( SELECT mjr.caseinfo_reference AS casereference, job.jobinfo_queuename AS queue, mjr.restoration_materialname AS materialname, "max"(job.messageid) AS maxmessageid
+           FROM import.fct_milltrackermillingjob job
+      JOIN import.fct_milltrackermillingjobrestoration mjr ON job.messageid = mjr.messageid
+     WHERE job.jobinfo_status::text = 'MillCompleted'::character varying::text
+     GROUP BY mjr.caseinfo_reference, job.jobinfo_queuename, mjr.restoration_materialname) x ON mj.messageid = x.maxmessageid
+   LEFT JOIN ( SELECT fct_milltrackermillingjobrestoration.caseinfo_reference AS casereference, count(DISTINCT fct_milltrackermillingjobrestoration.restoration_range) AS distinctrestorations
+      FROM import.fct_milltrackermillingjobrestoration
+     GROUP BY fct_milltrackermillingjobrestoration.caseinfo_reference) xx ON x.casereference::text = xx.casereference::text
+   LEFT JOIN ( SELECT DISTINCT fct_milltrackermillingjobrestoration.caseinfo_reference, fct_milltrackermillingjobrestoration.restoration_status, fct_milltrackermillingjobrestoration.restoration_updatedate::timestamp without time zone AS restoration_updatedate
+   FROM import.fct_milltrackermillingjobrestoration
+  WHERE fct_milltrackermillingjobrestoration.restoration_status::text = 'MillCompleted'::text) man ON x.casereference::text = man.caseinfo_reference::text;
+
+
+GRANT SELECT ON tableau.milling_lucy_dev TO operations;
+GRANT SELECT ON tableau.milling_lucy_dev TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.milling_lucy_dev TO cloudbeam;
+GRANT SELECT ON tableau.milling_lucy_dev TO _robertp;
+GRANT SELECT ON tableau.milling_lucy_dev TO _ops;
+
+
+COMMIT;

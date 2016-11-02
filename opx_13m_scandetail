@@ -1,0 +1,36 @@
+CREATE OR REPLACE VIEW tableau.opx_13m_scandetail
+(
+  scanid,
+  intorderid,
+  scancreatedlocaldts,
+  scanstartlocaldts,
+  scanendlocaldts,
+  orderid,
+  applicationname,
+  scannerserial,
+  scansource,
+  scanlocation,
+  singlescanunits,
+  bridgescanunits,
+  totalscanunits,
+  scandurationinminutes,
+  rescan
+)
+AS 
+ SELECT scan.scanid, scan.intorderid, scan.scancreatedlocaldts, scan.scanstartlocaldts, scan.scanendlocaldts, scan.orderid, scan.applicationname, scan.scannerserial, scan.scansource, scan.scanlocation, scan.singlescanunits, scan.bridgescanunits, scan.totalscanunits, scan.scandurationinminutes, COALESCE(scan.rescan, '0'::character varying)::integer AS rescan
+   FROM fct.scan
+  WHERE scan.scancreatedlocaldts >= date_add('month'::character varying::text, - 13::bigint, date_trunc('day'::character varying::text, 'now'::character varying::date::timestamp without time zone)) AND scan.scanlocation IS NOT NULL;
+
+
+GRANT DELETE, RULE, SELECT, INSERT, REFERENCES, TRIGGER, UPDATE ON tableau.opx_13m_scandetail TO _henryc;
+GRANT TRIGGER, REFERENCES, RULE, UPDATE, DELETE, INSERT, SELECT ON tableau.opx_13m_scandetail TO _tableau;
+GRANT REFERENCES, DELETE, INSERT, UPDATE, TRIGGER, RULE, SELECT ON tableau.opx_13m_scandetail TO _katiet;
+GRANT DELETE, TRIGGER, RULE, UPDATE, SELECT, REFERENCES, INSERT ON tableau.opx_13m_scandetail TO operations;
+GRANT UPDATE, DELETE, SELECT, REFERENCES, INSERT, TRIGGER, RULE ON tableau.opx_13m_scandetail TO _johns;
+GRANT UPDATE, INSERT, DELETE, RULE, SELECT, REFERENCES, TRIGGER ON tableau.opx_13m_scandetail TO _kelseyo;
+GRANT SELECT ON tableau.opx_13m_scandetail TO _anthonyo;
+GRANT SELECT ON tableau.opx_13m_scandetail TO _lucy;
+GRANT TRIGGER, SELECT, RULE, DELETE, REFERENCES, INSERT, UPDATE ON tableau.opx_13m_scandetail TO cloudbeam;
+
+
+COMMIT;

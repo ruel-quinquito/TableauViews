@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opx_a_customerupsell
+(
+  contactdts,
+  couponoffered,
+  enteredby,
+  talkto,
+  assigneddate,
+  doctoraccountid,
+  assignto,
+  productid,
+  quantity,
+  totalcharge,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  pf_productline,
+  pf_productgroup,
+  pf_isactualunit
+)
+AS 
+ SELECT a.contactdts, a.couponoffered, a.enteredby, a.talkto, split_part(a.rowid::text, ' '::text, 1) AS assigneddate, split_part(a.rowid::text, ' '::text, 2) AS doctoraccountid, b.assignto, d.productid, d.quantity, c.totalcharge, c.dateinlocaldts, c.dateinvoicedlocaldts, e.pf_productline, e.pf_productgroup, e.pf_isactualunit
+   FROM test.accountchurn_customercategory_contacthistory a
+   LEFT JOIN test.accountchurn_customercategory_monitoredaccounts b ON "right"(a.rowid::text, len(a.rowid::text) - 11) = "right"(b.monitoredaccountid::text, len(b.monitoredaccountid::text) - 11)
+   LEFT JOIN fct."order" c ON "right"(b.monitoredaccountid::text, len(b.monitoredaccountid::text) - 11) = c.doctorid::text
+   LEFT JOIN fct.orderitem d ON c.orderid = d.orderid
+   LEFT JOIN dim.products e ON d.productid::text = e.productid::text;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_customerupsell TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_customerupsell TO operations;
+
+
+COMMIT;

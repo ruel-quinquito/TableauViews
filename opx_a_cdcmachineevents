@@ -1,0 +1,60 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cdcmachineevents
+(
+  caseid,
+  applicationname,
+  scannerserial,
+  facilityid,
+  eventgroup,
+  processlabellocationid,
+  locationname,
+  tech,
+  techid,
+  seqid,
+  beginevent,
+  begindtslocal,
+  endevent,
+  enddtslocal,
+  durationinminutes,
+  queuetimeinminutes,
+  reject,
+  rejecttype,
+  rejectreasoncode,
+  rejectreason,
+  rejectedbytech,
+  rejectedbytechlocationid,
+  rejectedbytechlocationname,
+  rejectcomment,
+  origtech,
+  tooth,
+  toothmask,
+  shade,
+  productid,
+  isanterior,
+  material,
+  productionfacilityid,
+  productiondepartment,
+  datein,
+  dateinvoiced,
+  doctorid,
+  doctorname,
+  customertypeid,
+  customercategory,
+  patientname,
+  remakecaseid,
+  remakereasonid,
+  remakereason,
+  mouseclicks
+)
+AS 
+ SELECT cdc.caseid, cdc.applicationname, cdc.scannerserial, cdc.facilityid, cdc.eventgroup, cdc.processlabellocationid, cdc.locationname, upper(cdc.tech::text) AS tech, cdc.techid, cdc.seqid, cdc.beginevent, cdc.begindtslocal, cdc.endevent, cdc.enddtslocal, cdc.durationinminutes, cdc.queuetimeinminutes, cdc.reject, cdc.rejecttype, cdc.rejectreasoncode, cdc.rejectreason, cdc.rejectedbytech, cdc.rejectedbytechlocationid, cdc.rejectedbytechlocationname, cdc.rejectcomment, cdc.origtech, cdc.tooth, cdc.toothmask, cdc.shade, cdc.productid, cdc.isanterior, cdc.material, cdc.productionfacilityid, cdc.productiondepartment, cdc.datein, cdc.dateinvoiced, cdc.doctorid, cdc.doctorname, cdc.customertypeid, cdc.customercategory, cdc.patientname, cdc.remakecaseid, cdc.remakereasonid, cdc.remakereason, cdc.mouseclicks
+   FROM fct.centralizeddesigns cdc;
+
+
+GRANT SELECT ON tableau.opx_a_cdcmachineevents TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_cdcmachineevents TO _lucy;
+GRANT SELECT ON tableau.opx_a_cdcmachineevents TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cdcmachineevents TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cdcmachineevents TO _ops;
+
+
+COMMIT;

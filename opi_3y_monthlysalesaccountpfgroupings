@@ -1,0 +1,47 @@
+CREATE OR REPLACE VIEW tableau.opi_3y_monthlysalesaccountpfgroupings
+(
+  doctorid,
+  customercategory,
+  originfacilityid,
+  city,
+  state,
+  statefullname,
+  zipcode,
+  region,
+  division,
+  country,
+  pf_departmentid,
+  pf_productline,
+  pf_producttype,
+  pf_productgroup,
+  date,
+  totalnetsales,
+  digitalnetsales,
+  grosssales,
+  totaldiscount,
+  totalremakediscount,
+  totaltax,
+  totalcharge,
+  salesopp
+)
+AS 
+ SELECT s.doctorid, s.customercategory, s.originfacilityid, COALESCE(z.city, s.city) AS city, COALESCE(z.state, s.state) AS state, z.statefullname, s.zipcode, z."region", z.division, s.country, s.pf_departmentid, s.pf_productline, s.pf_producttype, s.pf_productgroup, s.date, s.totalnetsales, s.digitalnetsales, s.grosssales, s.totaldiscount, s.totalremakediscount, s.totaltax, s.totalcharge, 
+        CASE
+            WHEN s.doctorid::text = so.doctorid::text THEN 'Sales Opp'::character varying
+            ELSE 'No Sales Opp Calls'::character varying
+        END AS salesopp
+   FROM sum.monthlysalesaccountpfgroupings s
+   LEFT JOIN dim.zipcodes z ON z.zipcode::text = s.zipcode::text AND z.primaryrecord::text = 'P'::character varying::text
+   LEFT JOIN ( SELECT salesopportunitytracking.doctorid, count(*) AS ct
+      FROM sum.salesopportunitytracking
+     GROUP BY salesopportunitytracking.doctorid) so ON s.doctorid::text = so.doctorid::text
+  WHERE s.date >= date_add('year'::character varying::text, - 2::bigint, date_trunc('year'::character varying::text, 'now'::character varying::date::timestamp without time zone));
+
+
+GRANT SELECT ON tableau.opi_3y_monthlysalesaccountpfgroupings TO _anthonyo;
+GRANT SELECT ON tableau.opi_3y_monthlysalesaccountpfgroupings TO _lucy;
+GRANT SELECT ON tableau.opi_3y_monthlysalesaccountpfgroupings TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opi_3y_monthlysalesaccountpfgroupings TO cloudbeam;
+
+
+COMMIT;

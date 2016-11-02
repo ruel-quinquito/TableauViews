@@ -1,0 +1,58 @@
+CREATE OR REPLACE VIEW tableau.csi_a_callfeedback
+(
+  date,
+  description,
+  doctorid,
+  type,
+  caseid,
+  location,
+  feedback,
+  transactiontype,
+  productid,
+  toothstr,
+  remakeid,
+  quantity,
+  pf_productline,
+  status,
+  pf_departmentid,
+  note,
+  system_name,
+  system_techid,
+  mill_serialnumber
+)
+AS 
+ SELECT DISTINCT c.date, c.description, c.doctorid, c."type", c.caseid, c."location", c.feedback, oi.transactiontype, oi.productid, oi.toothstr, oi.remakeid, oi.quantity, p.pf_productline, c.status, p.pf_departmentid, cn.note, 
+        CASE
+            WHEN cad.systemname IS NULL THEN fast.applicationname
+            ELSE cad.systemname
+        END AS system_name, 
+        CASE
+            WHEN cad.operatorid IS NULL THEN fast.tech
+            ELSE cad.operatorid
+        END AS system_techid, milling.milling_serial AS mill_serialnumber
+   FROM fct.calls c
+   JOIN fct.callnotes cn ON c.callid::text = cn.callid::text
+   JOIN fct.orderitem oi ON c.caseid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+   LEFT JOIN ( SELECT sd.orderid AS caseid, upper(sd.systemname::text) AS systemname, upper(sd.operatorid::text) AS operatorid
+   FROM cp.fct_cad_scandesign sd
+   JOIN ( SELECT fct_cad_scandesign.orderid, "max"(fct_cad_scandesign.messageid) AS maxmessageid
+           FROM cp.fct_cad_scandesign
+          WHERE fct_cad_scandesign.noticedataobjectworkflowstep::text = 'Design'::text AND fct_cad_scandesign.noticedataobjectevent::text = 'Complete'::text
+          GROUP BY fct_cad_scandesign.orderid) x ON sd.messageid = x.maxmessageid) cad ON c.caseid::character varying(255)::text = cad.caseid::text
+   LEFT JOIN ( SELECT cd.caseid, upper(cd.applicationname::text) AS applicationname, upper(cd.tech::text) AS tech
+   FROM fct.centralizeddesigns cd
+   JOIN ( SELECT centralizeddesigns.caseid, centralizeddesigns.machineeventuid, "max"(centralizeddesigns.enddtslocal) AS maxenddtslocal
+           FROM fct.centralizeddesigns
+          WHERE centralizeddesigns.eventgroup::text = 'Design'::text AND centralizeddesigns.reject IS NULL
+          GROUP BY centralizeddesigns.caseid, centralizeddesigns.machineeventuid) x ON cd.machineeventuid::text = x.machineeventuid::text) fast ON c.caseid = fast.caseid
+   LEFT JOIN ( SELECT mill.orderid, mill.millmachineserialnumber AS milling_serial
+   FROM fct.centralizedmilling mill
+   JOIN ( SELECT centralizedmilling.orderid, "max"(centralizedmilling.locationmodifieddate) AS maxlocationmodifieddate
+           FROM fct.centralizedmilling
+          GROUP BY centralizedmilling.orderid) x ON mill.orderid = x.orderid
+  WHERE mill.millmachineserialnumber::text <> 'UNKNOWN'::text) milling ON c.caseid = milling.orderid
+  WHERE c.feedback::text <> ''::text AND p.pf_isactualunit::text = 1::text AND c.date >= date(date_add('year'::text, -2::bigint, 'now'::text::date::timestamp without time zone))
+  ORDER BY c.date DESC, c.caseid, oi.toothstr;
+
+COMMIT;

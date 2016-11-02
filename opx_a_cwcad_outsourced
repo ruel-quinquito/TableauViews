@@ -1,0 +1,47 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cwcad_outsourced
+(
+  orderid,
+  originfacilityid,
+  recordinsertedlocaldts,
+  messageid,
+  messagecreateddate,
+  messagetype,
+  udxguid,
+  udxversion,
+  applicationid,
+  systemname,
+  hostname,
+  operatorid,
+  trackingguid,
+  subjectname,
+  workflowstep,
+  event,
+  groupid,
+  groupname,
+  referencetype,
+  referenceguid,
+  beginutctime,
+  endutctime,
+  durationseconds,
+  mouseclicks,
+  caseguid,
+  caseidbroker,
+  caseidoriginator,
+  doctoridoriginator,
+  orderguid,
+  orderidbroker,
+  orderidoriginator,
+  ordertype
+)
+AS 
+ SELECT eo.orderid, eo.originfacilityid, m.recordinsertedlocaldts, m.messageid, m.messagecreateddate, m.messagetype, m.udxguid, m.udxversion, m.applicationid, m.systemname, m.hostname, m.operatorid, m.trackingguid, m.subjectname, m.workflowstep, m.event, m.groupid, m.groupname, m.referencetype, m.referenceguid, m.beginutctime, m.endutctime, m.durationseconds, m.mouseclicks, m.caseguid, m.caseidbroker, m.caseidoriginator, m.doctoridoriginator, m.orderguid, m.orderidbroker, m.orderidoriginator, m.ordertype
+   FROM cal.elektraorder eo
+   LEFT JOIN cp.fct_cadmessages m ON m.orderidoriginator::text = eo.orderid::text
+  WHERE (m.workflowstep::text = 'Scan'::character varying::text AND m.event::text = 'Complete'::text OR m.workflowstep::text = 'Design'::character varying::text AND m.event::text = 'Complete'::text) AND m.endutctime::text > '2016-07-31'::text;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cwcad_outsourced TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cwcad_outsourced TO operations;
+
+
+COMMIT;

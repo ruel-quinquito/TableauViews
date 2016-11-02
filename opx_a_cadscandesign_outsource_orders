@@ -1,0 +1,48 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign_outsource_orders
+(
+  dr_rank,
+  operator_id,
+  operator_groupid,
+  operator_groupname,
+  orderid,
+  orderid_teeth,
+  workflow_step,
+  workflow_event,
+  workflow_startdatetime,
+  workflow_enddatetime,
+  is_rejected,
+  rejected_by_operatorid,
+  rejected_by_groupid,
+  rejected_by_groupname,
+  rejected_by_startdatetime,
+  rejected_by_enddatetime
+)
+AS 
+ SELECT DISTINCT sr.dr_rank, sr.operator_id, sr.operator_groupid, sr.operator_groupname, sr.orderid, sr.orderid_teeth, sr.workflow_step, sr.workflow_event, sr.workflow_startdatetime, sr.workflow_enddatetime, 
+        CASE
+            WHEN dr.operator_id IS NULL THEN 0
+            ELSE 1
+        END AS is_rejected, dr.operator_id AS rejected_by_operatorid, dr.operator_groupid AS rejected_by_groupid, dr.operator_groupname AS rejected_by_groupname, dr.workflow_startdatetime AS rejected_by_startdatetime, dr.workflow_enddatetime AS rejected_by_enddatetime
+   FROM ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY opx_a_cadscandesign_outsource.orderid_teeth
+          ORDER BY "left"(opx_a_cadscandesign_outsource.workflow_enddatetime::character varying::text, 16)) AS dr_rank, opx_a_cadscandesign_outsource.operator_id, opx_a_cadscandesign_outsource.operator_groupid, opx_a_cadscandesign_outsource.operator_groupname, opx_a_cadscandesign_outsource.orderid, opx_a_cadscandesign_outsource.orderid_teeth, opx_a_cadscandesign_outsource.workflow_step, opx_a_cadscandesign_outsource.workflow_event, opx_a_cadscandesign_outsource.workflow_startdatetime, opx_a_cadscandesign_outsource.workflow_enddatetime
+           FROM tableau.opx_a_cadscandesign_outsource
+          WHERE opx_a_cadscandesign_outsource.workflow_step::text = 'Scan'::character varying::text AND opx_a_cadscandesign_outsource.workflow_event::text = 'Complete'::character varying::text) sr
+   LEFT JOIN ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY opx_a_cadscandesign_outsource.orderid_teeth
+          ORDER BY "left"(opx_a_cadscandesign_outsource.workflow_enddatetime::character varying::text, 16)) AS sr_rank, opx_a_cadscandesign_outsource.operator_id, opx_a_cadscandesign_outsource.operator_groupid, opx_a_cadscandesign_outsource.operator_groupname, opx_a_cadscandesign_outsource.orderid_teeth, opx_a_cadscandesign_outsource.workflow_step, opx_a_cadscandesign_outsource.workflow_event, opx_a_cadscandesign_outsource.workflow_startdatetime, opx_a_cadscandesign_outsource.workflow_enddatetime, opx_a_cadscandesign_outsource.originating_from_operatorid
+           FROM tableau.opx_a_cadscandesign_outsource
+          WHERE opx_a_cadscandesign_outsource.workflow_result::text = 'Scan-Reject'::character varying::text) dr ON sr.orderid_teeth::text = dr.orderid_teeth::text AND sr.operator_id::text = dr.originating_from_operatorid::text AND dr.sr_rank = sr.dr_rank;
+
+
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders TO _benv;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders TO _etl;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign_outsource_orders TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders TO _malcolm;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders TO _ops;
+
+
+COMMIT;

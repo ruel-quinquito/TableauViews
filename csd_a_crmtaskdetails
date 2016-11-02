@@ -1,0 +1,27 @@
+CREATE OR REPLACE VIEW tableau.csd_a_crmtaskdetails
+(
+  taskowner,
+  ticketsubject,
+  taskactualstartdate,
+  taskactualenddate,
+  ticketteamowner,
+  taskactivitystatus,
+  tasktimespent,
+  ticketpriority,
+  ticketnumber
+)
+AS 
+ SELECT crmdynamics.taskowner, crmdynamics.ticketsubject, crmdynamics.taskactualstartdate, crmdynamics.taskactualenddate, crmdynamics.ticketteamowner, crmdynamics.taskactivitystatus, crmdynamics.tasktimespent, crmdynamics.ticketpriority, crmdynamics.ticketnumber
+   FROM fct.crmdynamics
+  WHERE crmdynamics.ticketteamowner::text <> 'it helpdesk'::text;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.csd_a_crmtaskdetails TO _tableau;
+GRANT SELECT ON tableau.csd_a_crmtaskdetails TO _anthonyo;
+GRANT SELECT ON tableau.csd_a_crmtaskdetails TO _lucy;
+GRANT SELECT ON tableau.csd_a_crmtaskdetails TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.csd_a_crmtaskdetails TO cloudbeam;
+GRANT SELECT ON tableau.csd_a_crmtaskdetails TO _ops;
+
+
+COMMIT;

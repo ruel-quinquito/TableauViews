@@ -1,0 +1,41 @@
+CREATE OR REPLACE VIEW tableau.opx_2y_centralizedmilling
+(
+  millingfacilityid,
+  millinglocation,
+  isautopilot,
+  millingjobstatus,
+  locationstartdate,
+  locationenddate,
+  blockid,
+  blockserialnumber,
+  blockmaterial,
+  blockcolor,
+  blocksize,
+  parttypegroup,
+  parttype,
+  orderid,
+  toothstr,
+  shade,
+  productid,
+  productdepartment,
+  productline,
+  isbridge,
+  totalunits,
+  produnits,
+  nonprodunits,
+  remillunits,
+  requireremillunits,
+  isremill,
+  remillreason,
+  remillreasoncategory,
+  blockheight,
+  millmachineserialnumber,
+  totalcycletime
+)
+AS 
+ SELECT cm.millingfacilityid, cm.millinglocation, cm.isautopilot, cm.millingjobstatus, cm.locationstartdate, cm.locationenddate, cm.blockid, cm.blockserialnumber, cm.blockmaterial, cm.blockcolor, cm.blocksize, cm.parttypegroup, cm.parttype, cm.orderid, cm.toothstr, cm.shade, cm.productid, p.departmentid AS productdepartment, p.pf_productline AS productline, cm.isbridge, cm.totalunits, cm.produnits, cm.nonprodunits, cm.remillunits, cm.requireremillunits, cm.isremill, cm.remillreason, cm.remillreasoncategory, cm.blockheight, cm.millmachineserialnumber, cm.totalcycletime
+   FROM fct.centralizedmilling cm
+   LEFT JOIN dim.products p ON upper(p.productid::text) = upper(cm.productid::text)
+  WHERE cm.locationstartdate >= date_add('year'::character varying::text, - 2::bigint, date_trunc('day'::character varying::text, 'now'::character varying::date::timestamp without time zone));
+
+COMMIT;

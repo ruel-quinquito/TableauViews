@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountstatusbylab
+(
+  doctorid,
+  originfacilityid,
+  accountstatusseqid,
+  orderid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  labfirst,
+  labrestart,
+  labrestartseqid,
+  lablastinvoiced,
+  lablastin,
+  masteraccountid,
+  masteraccountoriginfacilityid,
+  orderproductid,
+  productid
+)
+AS 
+ SELECT accountstatusbylab.doctorid, accountstatusbylab.originfacilityid, accountstatusbylab.accountstatusseqid, accountstatusbylab.orderid, accountstatusbylab.dateinlocaldts, accountstatusbylab.dateinvoicedlocaldts, accountstatusbylab.labfirst, accountstatusbylab.labrestart, accountstatusbylab.labrestartseqid, accountstatusbylab.lablastinvoiced, accountstatusbylab.lablastin, accountstatusbylab.masteraccountid, accountstatusbylab.masteraccountoriginfacilityid, accountstatusbylab.orderproductid, accountstatusbylab.productid
+   FROM cal.accountstatusbylab
+  WHERE accountstatusbylab.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval));
+
+
+GRANT SELECT ON tableau.opx_a_accountstatusbylab TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_accountstatusbylab TO executive;
+GRANT SELECT ON tableau.opx_a_accountstatusbylab TO _lucy;
+GRANT SELECT ON tableau.opx_a_accountstatusbylab TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_accountstatusbylab TO cloudbeam;
+
+
+COMMIT;

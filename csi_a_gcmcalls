@@ -1,0 +1,62 @@
+CREATE OR REPLACE VIEW tableau.csi_a_gcmcalls
+(
+  date,
+  doctorid,
+  caseid,
+  departmentid,
+  callid,
+  productid,
+  patientname,
+  briefdescription,
+  response,
+  unitgroupid,
+  locationid,
+  pf_productline,
+  originfacility
+)
+AS 
+ SELECT c.date, c.doctorid, c.caseid, p.departmentid, c.callid, p.productid, (rtrim(c.patientfirst::text) + ' '::text + rtrim(c.patientlast::text))::character varying AS patientname, 
+        CASE
+            WHEN c.feedback::text <> '-- MET --'::text THEN "substring"(c.feedback::text, 6, 40)::character varying
+            ELSE c.feedback
+        END AS briefdescription, 
+        CASE
+            WHEN c.feedback::text = '-- MET --'::text THEN 'Met'::text
+            ELSE 'Not Met'::text
+        END::character varying AS response, p.unitgroupid, "left"(d.doctorid::text, 2)::character varying AS locationid, p.pf_productline, sh.originfacility
+   FROM fct.calls c
+   LEFT JOIN ( SELECT oi.recordinsertedlocaldts, oi.recordmodifiedlocaldts, oi.orderid, oi.orderproductid, oi.originfacilityid, oi.originfacility, oi.productionfacilityid, oi.productionfacility, oi.transactiontype, oi.productid, oi.toothstr, oi.quantity, oi.unitprice, oi.discount, oi.remakediscount, oi.totalcharge, oi.totaltax, oi.remakeid, oi.reasonid, oi.remakereason, oi.isforsurcharge, oi.isbridge, oi.bodyshade, oi.stumpshade, oi.gingivalshade, oi.incisalshade, oi.discountid, o.ordertype
+           FROM fct.orderitem oi
+      JOIN fct."order" o ON oi.orderid = o.orderid AND o.dateinvoicedlocaldts IS NOT NULL AND o.ordertypeid <> 4) sh ON c.caseid = sh.orderid
+   LEFT JOIN dim.products p ON sh.productid::text = p.productid::text
+   LEFT JOIN dim.doctors d ON c.doctorid::text = d.doctorid::text
+  WHERE c.feedback IS NOT NULL AND c.feedback::text <> ''::text AND c.deleted::text = 0::text AND p.unitgroupid IS NOT NULL AND c.caseid <> 0
+UNION 
+ SELECT c.date, c.doctorid, c.caseid, p.departmentid, c.callid, p.productid, (rtrim(c.patientfirst::text) + ' '::text + rtrim(c.patientlast::text))::character varying AS patientname, 
+        CASE
+            WHEN c.feedback::text <> '-- MET --'::text THEN "substring"(c.feedback::text, 6, 40)::character varying
+            ELSE c.feedback
+        END AS briefdescription, 
+        CASE
+            WHEN c.feedback::text = '-- MET --'::text THEN 'Met'::text
+            ELSE 'Not Met'::text
+        END::character varying AS response, p.unitgroupid, "left"(d.doctorid::text, 2)::character varying AS locationid, p.pf_productline, sh.originfacility
+   FROM fct.calls c
+   LEFT JOIN ( SELECT oi.recordinsertedlocaldts, oi.recordmodifiedlocaldts, oi.orderid, oi.orderproductid, oi.originfacilityid, oi.originfacility, oi.productionfacilityid, oi.productionfacility, oi.transactiontype, oi.productid, oi.toothstr, oi.quantity, oi.unitprice, oi.discount, oi.remakediscount, oi.totalcharge, oi.totaltax, oi.remakeid, oi.reasonid, oi.remakereason, oi.isforsurcharge, oi.isbridge, oi.bodyshade, oi.stumpshade, oi.gingivalshade, oi.incisalshade, oi.discountid, o.ordertype
+           FROM fct.orderitem oi
+      JOIN fct."order" o ON oi.orderid = o.orderid AND o.dateinvoicedlocaldts IS NOT NULL AND o.ordertypeid <> 4) sh ON c.caseid = sh.orderid
+   LEFT JOIN dim.products p ON sh.productid::text = p.productid::text
+   LEFT JOIN dim.doctors d ON c.doctorid::text = d.doctorid::text
+  WHERE c.feedback IS NOT NULL AND c.feedback::text <> ''::text AND c.deleted::text = 0::text AND p.unitgroupid IS NULL AND c.caseid = 0;
+
+
+GRANT TRIGGER, INSERT, DELETE, RULE, SELECT, REFERENCES, UPDATE ON tableau.csi_a_gcmcalls TO _mgmt;
+GRANT DELETE, TRIGGER, RULE, UPDATE, SELECT, REFERENCES, INSERT ON tableau.csi_a_gcmcalls TO operations;
+GRANT RULE, SELECT, DELETE, REFERENCES, INSERT, TRIGGER, UPDATE ON tableau.csi_a_gcmcalls TO _ops;
+GRANT SELECT ON tableau.csi_a_gcmcalls TO _anthonyo;
+GRANT SELECT ON tableau.csi_a_gcmcalls TO _lucy;
+GRANT INSERT, UPDATE, DELETE, RULE, SELECT, TRIGGER, REFERENCES ON tableau.csi_a_gcmcalls TO management;
+GRANT DELETE, REFERENCES, INSERT, TRIGGER, SELECT, UPDATE, RULE ON tableau.csi_a_gcmcalls TO cloudbeam;
+
+
+COMMIT;

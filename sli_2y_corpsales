@@ -1,0 +1,42 @@
+CREATE OR REPLACE VIEW tableau.sli_2y_corpsales
+(
+  orderid,
+  dateinvoiced,
+  accountid,
+  inhouse,
+  istest,
+  productid,
+  productdescription,
+  isactualunit,
+  bundlequantity,
+  quantity,
+  netsales,
+  ordertotal,
+  originfacilityid,
+  productionfacilityid,
+  allocationtypeid,
+  allocationdirection,
+  allocationtype,
+  pf_departmentid,
+  pf_productline,
+  pf_productgroup,
+  pf_producttype
+)
+AS 
+ SELECT o.orderid, o.dateinvoicedlocaldts AS dateinvoiced, o.doctorid AS accountid, acct.inhouseaccount AS inhouse, acct.istestaccount AS istest, pf.productid, p.description AS productdescription, p.pf_isactualunit AS isactualunit, p.bundlequantity, pf.pf_quantity AS quantity, pf.pf_netsales AS netsales, 
+        CASE
+            WHEN pf.totalsales IS NULL THEN o.totalcharge
+            ELSE pf.totalsales
+        END AS ordertotal, pf.originfacilityid, pf.productionfacilityid, pf.allocationtypeid, pf.allocationdirection, pf.allocationtype, p.pf_departmentid, p.pf_productline, p.pf_productgroup, p.pf_producttype
+   FROM ( SELECT performanceforecast.orderid, performanceforecast.productid, performanceforecast.allocationtypeid, performanceforecast.allocationdirection, performanceforecast.allocationtype, performanceforecast.pf_quantity, performanceforecast.pf_netsales, sum(performanceforecast.pf_netsales)
+          OVER( 
+          PARTITION BY performanceforecast.orderid
+          ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS totalsales, performanceforecast.originfacilityid, performanceforecast.productionfacilityid
+           FROM cal.performanceforecast
+          WHERE performanceforecast.allocationtypeid = 0 OR performanceforecast.allocationtypeid = 1 OR performanceforecast.allocationtypeid = 4 OR performanceforecast.allocationtypeid = 5 OR performanceforecast.allocationtypeid = 6) pf
+   LEFT JOIN fct."order" o ON pf.orderid = o.orderid
+   LEFT JOIN dim.accounts acct ON o.doctorid::text = acct.accountid::text
+   LEFT JOIN dim.products p ON pf.productid::text = p.productid::text
+  WHERE o.dateinvoicedlocaldts IS NOT NULL AND o.dateinvoicedlocaldts >= date(date_add('year'::text, -2::bigint, 'now'::text::date::timestamp without time zone));
+
+COMMIT;

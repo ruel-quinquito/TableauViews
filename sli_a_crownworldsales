@@ -1,0 +1,86 @@
+CREATE OR REPLACE VIEW tableau.sli_a_crownworldsales
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  orderid,
+  doctorid,
+  clientid,
+  originfacilityid,
+  originfacility,
+  grosssales,
+  discount,
+  totaltax,
+  netsales,
+  totalcharge,
+  dateinvoiced,
+  isreturn,
+  remakeof,
+  remakeofdateinvoicedlocaldts,
+  address1,
+  address2,
+  city,
+  state,
+  postalcode,
+  country
+)
+AS 
+ SELECT eo.recordinsertedlocaldts, eo.recordmodifiedlocaldts, eo.orderid, eo.doctorid, eo.clientid, eo.originfacilityid, eo.originfacility, eo.grosssales, eo.discount, eo.totaltax, eo.netsales, eo.totalcharge, 
+        CASE
+            WHEN eo.isreturn::text = '1'::text AND eo.dateinvoicedlocaldts IS NULL THEN eo.dateinlocaldts
+            ELSE eo.dateinvoicedlocaldts
+        END AS dateinvoiced, 
+        CASE
+            WHEN eo.isreturn IS NULL THEN 'no'::text
+            WHEN eo.isreturn::text = '1'::text THEN 'yes'::text
+            ELSE NULL::text
+        END AS isreturn, eoi.remakeof, eoi.remakeofdateinvoicedlocaldts, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptostreet1::character varying
+            ELSE cwadd.street1
+        END AS address1, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptostreet2::character varying
+            ELSE cwadd.street2
+        END AS address2, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptocity::character varying
+            ELSE cwadd.city
+        END AS city, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptostate::character varying
+            ELSE cwadd.state
+        END AS state, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptopostalcode
+            ELSE cwadd.zipcode
+        END AS postalcode, 
+        CASE
+            WHEN eo.originfacilityid = 65 THEN gov.shiptocountry::character varying
+            ELSE cwadd.country
+        END AS country
+   FROM cal.elektraorder eo
+   LEFT JOIN ( SELECT DISTINCT elektraorderitem.orderid, elektraorderitem.remakeof, elektraorderitem.remakeofdateinvoicedlocaldts
+           FROM cal.elektraorderitem) eoi ON eo.orderid::text = eoi.orderid::text
+   LEFT JOIN ( SELECT "max"(crownworldordersaddress.id) AS maxid, crownworldordersaddress.orderid, crownworldordersaddress.street1, crownworldordersaddress.street2, crownworldordersaddress.city, crownworldordersaddress.state, crownworldordersaddress.zipcode, crownworldordersaddress.country
+      FROM fct.crownworldordersaddress
+     WHERE crownworldordersaddress.addresstype::text = 'Billing'::text AND crownworldordersaddress.street1 IS NOT NULL
+     GROUP BY crownworldordersaddress.orderid, crownworldordersaddress.street1, crownworldordersaddress.street2, crownworldordersaddress.city, crownworldordersaddress.state, crownworldordersaddress.zipcode, crownworldordersaddress.country) cwadd ON eo.orderid::text = cwadd.orderid::text OR split_part(eo.orderid::text, '-'::text, 1) = split_part(cwadd.orderid::text, '-'::text, 1)
+   LEFT JOIN ( SELECT DISTINCT split_part(gov3order.orderid::text, '-'::text, 1)::character varying(150) AS orderid, upper(gov3order.shiptostreet1::text) AS shiptostreet1, 
+        CASE
+            WHEN upper(gov3order.shiptostreet2::text) = ''::text THEN NULL::text
+            ELSE upper(gov3order.shiptostreet2::text)
+        END AS shiptostreet2, upper(gov3order.shiptocity::text) AS shiptocity, upper(gov3order.shiptostate::text) AS shiptostate, 
+        CASE
+            WHEN gov3order.shiptopostalcode::text = ''::text THEN NULL::character varying
+            ELSE gov3order.shiptopostalcode
+        END AS shiptopostalcode, upper(gov3order.shiptocountry::text) AS shiptocountry
+   FROM fct.gov3order) gov ON eo.orderid::text = gov.orderid::text;
+
+
+GRANT SELECT ON tableau.sli_a_crownworldsales TO operations;
+GRANT SELECT ON tableau.sli_a_crownworldsales TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sli_a_crownworldsales TO cloudbeam;
+GRANT SELECT ON tableau.sli_a_crownworldsales TO _ops;
+
+
+COMMIT;

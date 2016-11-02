@@ -1,0 +1,53 @@
+CREATE OR REPLACE VIEW tableau.opx_a_shippinganalysis
+(
+  orderid,
+  firstscandate,
+  lastscandate,
+  minutesbetweenfirstlastscan,
+  dateinlocaldts,
+  shipincarrierid,
+  shipintrackingnumber,
+  minutesbetweenfirstscandatein,
+  minutesbetweenlastscandatein,
+  caselocationfirstdate,
+  minutesbetweenlastscancaselocationfirstdate,
+  productionfirstdate,
+  minutesbetweenlastscanproduction,
+  building,
+  facilityid,
+  bruxzir,
+  thermoform
+)
+AS 
+ SELECT DISTINCT a.orderid, a.mindate AS firstscandate, a.maxdate AS lastscandate, date_diff('month'::character varying::text, a.mindate, a.maxdate) AS minutesbetweenfirstlastscan, b.dateinlocaldts, b.shipincarrierid, a.airbill AS shipintrackingnumber, date_diff('month'::character varying::text, a.mindate, b.dateinlocaldts) AS minutesbetweenfirstscandatein, date_diff('month'::character varying::text, a.maxdate, b.dateinlocaldts) AS minutesbetweenlastscandatein, clf.caselocationfirstdate, date_diff('month'::character varying::text, a.maxdate, clf.caselocationfirstdate) AS minutesbetweenlastscancaselocationfirstdate, a2.productionfirstdate, date_diff('month'::character varying::text, a.maxdate, a2.productionfirstdate) AS minutesbetweenlastscanproduction, a2.building, a2.facilityid, 
+        CASE
+            WHEN upper(d.pf_productline::text) = 'BRUXZIR'::character varying::text THEN '1'::character varying
+            ELSE '0'::character varying
+        END AS bruxzir, 
+        CASE
+            WHEN upper(d.pf_departmentid::text) = 'THERMOFORM'::character varying::text THEN '1'::character varying
+            ELSE '0'::character varying
+        END AS thermoform
+   FROM ( SELECT DISTINCT b.orderid, a.airbill, min(a.datetimemark_local) AS mindate, "max"(a.datetimemark_local) AS maxdate
+           FROM fct.cpackag a
+      JOIN fct."order" b ON a.airbill::text = b.shipintrackingnumber::text AND b.dateinlocaldts >= date_add('day'::character varying::text, - 14::bigint, getdate())
+     GROUP BY b.orderid, b.dateinlocaldts, a.airbill) a
+   JOIN ( SELECT a.orderid, min(a.begindatelocaldts) AS productionfirstdate, a.building, a.facilityid
+           FROM fct.caselocationconsolidated a
+          WHERE a."zone"::text <> 'LOGISTICS'::character varying::text
+          GROUP BY a.orderid, a.building, a.facilityid) a2 ON a.orderid = a2.orderid
+   JOIN fct."order" b ON a.orderid = b.orderid
+   JOIN ( SELECT a.orderid, min(a.begindatelocaldts) AS caselocationfirstdate
+   FROM fct.caselocationconsolidated a
+  GROUP BY a.orderid) clf ON a.orderid = clf.orderid
+   JOIN fct.caselocation c ON b.orderid = c.orderid
+   JOIN agg.order360infobypart d ON a.orderid = d.orderid
+  WHERE a.orderid IS NOT NULL;
+
+
+GRANT SELECT ON tableau.opx_a_shippinganalysis TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_shippinganalysis TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_shippinganalysis TO _ops;
+
+
+COMMIT;

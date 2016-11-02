@@ -1,0 +1,40 @@
+CREATE OR REPLACE VIEW tableau.opx_a_customerexpcalls
+(
+  rowid,
+  accountid,
+  assigned_to,
+  assignment_date,
+  accountstatus_current,
+  callstart,
+  callstatus_label,
+  callstatus,
+  couponoffered,
+  targetmodel
+)
+AS 
+ SELECT c.rowid, c.accountid, c.assigned_to, c.assignment_date, c.accountstatus_current, c.callstart, c.callstatus_label, c.callstatus, c.couponoffered, c.targetmodel
+   FROM ( SELECT ccm.monitoredaccountid AS rowid, split_part(ccm.monitoredaccountid::text, ' '::text, 2)::character varying AS accountid, ccm.assignto AS assigned_to, split_part(ccm.monitoredaccountid::text, ' '::text, 1)::character varying AS assignment_date, ccm.status AS accountstatus_current, upsellcall.messageutc AS callstart, upsellcall.callstatus_label, upsellcall.callstatus_wording AS callstatus, NULL::"unknown" AS couponoffered, 'upsell' AS targetmodel, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY ccm.monitoredaccountid
+          ORDER BY ccm.lastmodifieddts DESC) AS statusrank
+           FROM test.accountchurn_customercategory_monitoredaccounts ccm
+      LEFT JOIN ( SELECT rds_predictiveanalysis_callscripts.rowid, rds_predictiveanalysis_callscripts.messageutc, rds_predictiveanalysis_callscripts.callstatus_label, rds_predictiveanalysis_callscripts.callstatus_wording
+                   FROM import.rds_predictiveanalysis_callscripts) upsellcall ON ccm.monitoredaccountid::text = upsellcall.rowid::text
+UNION ALL 
+         SELECT acm.monitoredaccountid AS rowid, split_part(acm.monitoredaccountid::text, ' '::text, 2)::character varying AS accountid, acm.assignto AS assigned_to, split_part(acm.monitoredaccountid::text, ' '::text, 1)::character varying AS assignment_date, acm.status AS accountstatus_current, churncall.messageutc AS callstart, churncall.callstatus_label, churncall.callstatus_wording AS callstatus, NULL::"unknown" AS couponoffered, 'accountchurn' AS targetmodel, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY acm.monitoredaccountid
+          ORDER BY acm.lastmodifieddts DESC) AS statusrank
+           FROM test.accountchurn_monitoredaccounts acm
+      LEFT JOIN ( SELECT rds_predictiveanalysis_callscripts.rowid, rds_predictiveanalysis_callscripts.messageutc, rds_predictiveanalysis_callscripts.callstatus_label, rds_predictiveanalysis_callscripts.callstatus_wording
+                   FROM import.rds_predictiveanalysis_callscripts) churncall ON acm.monitoredaccountid::text = churncall.rowid::text) c
+  WHERE c.statusrank = 1;
+
+
+GRANT SELECT ON tableau.opx_a_customerexpcalls TO _lucy;
+GRANT SELECT ON tableau.opx_a_customerexpcalls TO operations;
+GRANT SELECT ON tableau.opx_a_customerexpcalls TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_customerexpcalls TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,105 @@
+CREATE OR REPLACE VIEW tableau.sls_a_accountintel_test
+(
+  accountid,
+  accounstatus_current,
+  assigned_to,
+  assignment_date,
+  callstartdts,
+  callstatus,
+  targetmodel,
+  purchasedsuggestedproduct,
+  suggested_product,
+  recommended_products,
+  sales3monthprior,
+  cases3monthprior,
+  units3monthprior,
+  sales6monthprior,
+  cases6monthprior,
+  units6monthprior,
+  sales3monthafter,
+  cases3monthafter,
+  units3monthafter,
+  sales6monthafter,
+  cases6monthafter,
+  units6monthafter
+)
+AS 
+ SELECT ce.accountid, ce.accounstatus_current, ce.assigned_to, ce.assignment_date::character varying AS assignment_date, ce.callstartdts, ce.callstatus, ce.targetmodel, ce.purchasedsuggestedproduct, ce.suggested_product, NULL::"unknown" AS recommended_products, ce.sales3monthprior, ce.cases3monthprior, ce.units3monthprior, ce.sales6monthprior, ce.cases6monthprior, ce.units6monthprior, ce.sales3monthafter, ce.cases3monthafter, ce.units3monthafter, ce.sales6monthafter, ce.cases6monthafter, ce.units6monthafter
+   FROM tableau.sls_a_customerexp ce
+UNION ALL 
+ SELECT threeprior.accountid, threeprior.accounstatus_current, threeprior.assignto AS assigned_to, threeprior.assignment_date, threeprior.callstartdts, threeprior.callstatus, threeprior.targetmodel, COALESCE(trea.purchasedsuggestedproduct, 0) AS purchasedsuggestedproduct, threeprior.suggested_product, threeprior.recommended_products, threeprior.sales3monthprior, threeprior.cases3monthprior, threeprior.units3monthprior, sixp.sales6monthprior, sixp.cases6monthprior, sixp.units6monthprior, trea.sales3monthafter, trea.cases3monthafter, trea.units3monthafter, sixa.sales6monthafter, sixa.cases6monthafter, sixa.units6monthafter
+   FROM ( SELECT tot.accountid, tot.accounstatus_current, tot.assignment_date, sum(tot.totalcharge) AS sales3monthprior, count(DISTINCT tot.orderid) AS cases3monthprior, sum(tot.quantity) AS units3monthprior, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto
+           FROM ( SELECT cs.accountid, cs.accountstatus_current AS accounstatus_current, cs.assign_date AS assignment_date, a.orderid, c.totalcharge, c.quantity, date(cs.callstartdts) AS callstartdts, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.callstatus, cs.assignto
+                   FROM fct."order" a
+              LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+         LEFT JOIN ( SELECT cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, "max"(cs.startutc::timestamp without time zone) AS callstartdts, maxstatus.status AS accountstatus_current, cs.callstatus, cs."user" AS assignto
+                      FROM import.rds_accountintel_callscripts cs
+                 JOIN ( SELECT pg_catalog.row_number()
+                             OVER( 
+                             PARTITION BY rds_accountintel_accountupdate.accountid
+                             ORDER BY rds_accountintel_accountupdate.lastmodifieddts DESC) AS statusrank, rds_accountintel_accountupdate.lastmodifieddts, rds_accountintel_accountupdate.monitoredaccountid, rds_accountintel_accountupdate.accountid, rds_accountintel_accountupdate.status
+                              FROM import.rds_accountintel_accountupdate) maxstatus ON cs.rowid::text = maxstatus.monitoredaccountid::text
+                WHERE maxstatus.statusrank = 1 AND maxstatus.status::text = 'Completed'::text
+                GROUP BY cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.endutc, cs.callstatus, maxstatus.status, cs."user") cs ON a.doctorid::text = cs.accountid::text
+        WHERE a.ordertype::text = 'New'::text AND a.dateinlocaldts >= date_add('month'::text, -3::bigint, date(cs.callstartdts)::timestamp without time zone) AND a.dateinlocaldts < date_add('day'::text, date_diff('day'::text, cs.callstartdts, date('now'::text::timestamp(6) with time zone)::timestamp without time zone), date_add('month'::text, -3::bigint, cs.callstartdts))) tot
+          GROUP BY tot.accountid, tot.accounstatus_current, tot.assignment_date, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto) threeprior
+   LEFT JOIN ( SELECT tot.accountid, tot.accounstatus_current, tot.assignment_date, sum(tot.totalcharge) AS sales6monthprior, count(DISTINCT tot.orderid) AS cases6monthprior, sum(tot.quantity) AS units6monthprior, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto
+           FROM ( SELECT cs.accountid, cs.accountstatus_current AS accounstatus_current, cs.assign_date AS assignment_date, a.orderid, c.totalcharge, c.quantity, date(cs.callstartdts) AS callstartdts, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.callstatus, cs.assignto
+                   FROM fct."order" a
+              LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+         LEFT JOIN ( SELECT cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, "max"(cs.startutc::timestamp without time zone) AS callstartdts, maxstatus.status AS accountstatus_current, cs.callstatus, cs."user" AS assignto
+                      FROM import.rds_accountintel_callscripts cs
+                 JOIN ( SELECT pg_catalog.row_number()
+                             OVER( 
+                             PARTITION BY rds_accountintel_accountupdate.accountid
+                             ORDER BY rds_accountintel_accountupdate.lastmodifieddts DESC) AS statusrank, rds_accountintel_accountupdate.lastmodifieddts, rds_accountintel_accountupdate.monitoredaccountid, rds_accountintel_accountupdate.accountid, rds_accountintel_accountupdate.status
+                              FROM import.rds_accountintel_accountupdate) maxstatus ON cs.rowid::text = maxstatus.monitoredaccountid::text
+                WHERE maxstatus.statusrank = 1 AND maxstatus.status::text = 'Completed'::text
+                GROUP BY cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.endutc, cs.callstatus, maxstatus.status, cs."user") cs ON a.doctorid::text = cs.accountid::text
+        WHERE a.ordertype::text = 'New'::text AND a.dateinlocaldts >= date_add('month'::text, -6::bigint, date(cs.callstartdts)::timestamp without time zone) AND a.dateinlocaldts < date_add('day'::text, date_diff('day'::text, cs.callstartdts, date('now'::text::timestamp(6) with time zone)::timestamp without time zone), date_add('month'::text, -6::bigint, cs.callstartdts))) tot
+          GROUP BY tot.accountid, tot.accounstatus_current, tot.assignment_date, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto) sixp ON threeprior.accountid::text = sixp.accountid::text AND threeprior.callstartdts = sixp.callstartdts
+   LEFT JOIN ( SELECT tot.accountid, tot.accounstatus_current, tot.assignment_date, sum(tot.totalcharge) AS sales3monthafter, count(DISTINCT tot.orderid) AS cases3monthafter, sum(tot.quantity) AS units3monthafter, tot.callstartdts, tot.targetmodel, tot.purchasedsuggestedproduct, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto
+      FROM ( SELECT cs.accountid, cs.accountstatus_current AS accounstatus_current, cs.assign_date AS assignment_date, a.orderid, c.totalcharge, c.quantity, date(cs.callstartdts) AS callstartdts, cs.targetmodel, 
+                   CASE
+                       WHEN upper(p.pf_productline::text) = upper(cs.suggested_product::text) THEN 1
+                       ELSE 0
+                   END AS purchasedsuggestedproduct, cs.suggested_product, cs.recommended_products, cs.callstatus, cs.assignto
+              FROM fct."order" a
+         LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+    LEFT JOIN dim.products p ON upper(c.productid::text) = upper(p.productid::text)
+   LEFT JOIN ( SELECT cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, "max"(cs.startutc::timestamp without time zone) AS callstartdts, maxstatus.status AS accountstatus_current, cs.callstatus, cs."user" AS assignto
+            FROM import.rds_accountintel_callscripts cs
+       JOIN ( SELECT pg_catalog.row_number()
+                   OVER( 
+                   PARTITION BY rds_accountintel_accountupdate.accountid
+                   ORDER BY rds_accountintel_accountupdate.lastmodifieddts DESC) AS statusrank, rds_accountintel_accountupdate.lastmodifieddts, rds_accountintel_accountupdate.monitoredaccountid, rds_accountintel_accountupdate.accountid, rds_accountintel_accountupdate.status
+                    FROM import.rds_accountintel_accountupdate) maxstatus ON cs.rowid::text = maxstatus.monitoredaccountid::text
+      WHERE maxstatus.statusrank = 1 AND maxstatus.status::text = 'Completed'::text
+      GROUP BY cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.endutc, cs.callstatus, maxstatus.status, cs."user") cs ON a.doctorid::text = cs.accountid::text
+  WHERE a.ordertype::text = 'New'::text AND a.dateinlocaldts >= date(cs.callstartdts) AND a.dateinvoicedlocaldts <= date_add('month'::text, 3::bigint, date(cs.callstartdts)::timestamp without time zone)) tot
+     GROUP BY tot.accountid, tot.accounstatus_current, tot.assignment_date, tot.callstartdts, tot.targetmodel, tot.purchasedsuggestedproduct, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto) trea ON threeprior.accountid::text = trea.accountid::text AND threeprior.callstartdts = trea.callstartdts
+   LEFT JOIN ( SELECT tot.accountid, tot.accounstatus_current, tot.assignment_date, sum(tot.totalcharge) AS sales6monthafter, count(DISTINCT tot.orderid) AS cases6monthafter, sum(tot.quantity) AS units6monthafter, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto
+   FROM ( SELECT cs.accountid, cs.accountstatus_current AS accounstatus_current, cs.assign_date AS assignment_date, a.orderid, c.totalcharge, c.quantity, date(cs.callstartdts) AS callstartdts, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.callstatus, cs.assignto
+           FROM fct."order" a
+      LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+   LEFT JOIN ( SELECT cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, "max"(cs.startutc::timestamp without time zone) AS callstartdts, maxstatus.status AS accountstatus_current, cs.callstatus, cs."user" AS assignto
+              FROM import.rds_accountintel_callscripts cs
+         JOIN ( SELECT pg_catalog.row_number()
+                     OVER( 
+                     PARTITION BY rds_accountintel_accountupdate.accountid
+                     ORDER BY rds_accountintel_accountupdate.lastmodifieddts DESC) AS statusrank, rds_accountintel_accountupdate.lastmodifieddts, rds_accountintel_accountupdate.monitoredaccountid, rds_accountintel_accountupdate.accountid, rds_accountintel_accountupdate.status
+                      FROM import.rds_accountintel_accountupdate) maxstatus ON cs.rowid::text = maxstatus.monitoredaccountid::text
+        WHERE maxstatus.statusrank = 1 AND maxstatus.status::text = 'Completed'::text
+        GROUP BY cs.accountid, cs.rowid, cs.assign_date, cs.targetmodel, cs.suggested_product, cs.recommended_products, cs.endutc, cs.callstatus, maxstatus.status, cs."user") cs ON a.doctorid::text = cs.accountid::text
+  WHERE a.ordertype::text = 'New'::text AND a.dateinlocaldts >= date(cs.callstartdts) AND a.dateinvoicedlocaldts <= date_add('month'::text, 6::bigint, date(cs.callstartdts)::timestamp without time zone)) tot
+  GROUP BY tot.accountid, tot.accounstatus_current, tot.assignment_date, tot.callstartdts, tot.targetmodel, tot.suggested_product, tot.recommended_products, tot.callstatus, tot.assignto) sixa ON threeprior.accountid::text = sixa.accountid::text;
+
+
+GRANT SELECT ON tableau.sls_a_accountintel_test TO _etl;
+GRANT SELECT ON tableau.sls_a_accountintel_test TO operations;
+GRANT SELECT ON tableau.sls_a_accountintel_test TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_a_accountintel_test TO cloudbeam;
+GRANT SELECT ON tableau.sls_a_accountintel_test TO _ops;
+
+
+COMMIT;

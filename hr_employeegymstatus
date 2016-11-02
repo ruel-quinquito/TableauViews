@@ -1,0 +1,29 @@
+CREATE OR REPLACE VIEW tableau.hr_employeegymstatus
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  company,
+  deprtmnt,
+  employid,
+  eeinactive,
+  hrstatus,
+  frstname,
+  lastname,
+  deducton,
+  dedinactive,
+  dedbegdt,
+  dedenddt,
+  deductionamt,
+  ytddedamt,
+  id
+)
+AS 
+ SELECT employeegymstatus.recordinsertedlocaldts, employeegymstatus.recordmodifiedlocaldts, employeegymstatus.company, employeegymstatus.deprtmnt, employeegymstatus.employid, employeegymstatus.eeinactive, employeegymstatus.hrstatus, employeegymstatus.frstname, employeegymstatus.lastname, employeegymstatus.deducton, employeegymstatus.dedinactive, employeegymstatus.dedbegdt, employeegymstatus.dedenddt, employeegymstatus.deductionamt, employeegymstatus.ytddedamt, employeegymstatus.id
+   FROM hr.employeegymstatus;
+
+
+GRANT SELECT ON tableau.hr_employeegymstatus TO _hr;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.hr_employeegymstatus TO cloudbeam;
+
+
+COMMIT;

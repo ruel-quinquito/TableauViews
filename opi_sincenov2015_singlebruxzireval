@@ -1,0 +1,37 @@
+CREATE OR REPLACE VIEW tableau.opi_sincenov2015_singlebruxzireval
+(
+  orderid,
+  doctorid,
+  pf_departmentid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  toothstr,
+  quantity,
+  evalquestion,
+  evalanswer,
+  evalanswerclass,
+  autoproposal
+)
+AS 
+ SELECT o.orderid, o.doctorid, p.pf_departmentid, o.dateinlocaldts, o.dateinvoicedlocaldts, oi.toothstr, oi.quantity, e.evalquestion, e.evalanswer, e.evalanswerclass, 0 AS autoproposal
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid AND oi.isbridge::text = 0::character varying::text
+   JOIN dim.products p ON p.productid::text = oi.productid::text AND p.pf_productline::text = 'BRUXZIR'::character varying::text
+   JOIN cal.orderitem oi1 ON oi1.orderid = oi.orderid AND oi1.orderproductid = oi.orderproductid AND oi1.isanterior::text = 0::character varying::text
+   JOIN fct.caseevaluationsurvey e ON e.evalorderid = o.orderid
+   LEFT JOIN ( SELECT DISTINCT opx_a_autoproposal.orderid
+   FROM tableau.opx_a_autoproposal) ap ON ap.orderid = o.orderid
+  WHERE o.dateinvoicedlocaldts >= '2015-11-01 00:00:00'::timestamp without time zone AND o.originfacilityid < 70 AND o.ordertypeid = 0 AND ap.orderid IS NULL
+UNION 
+ SELECT ap.orderid, ap.doctorid, ap.groupname AS pf_departmentid, ap.dateinlocaldts, ap.dateinvoicedlocaldts, ap.toothstr, ap.quantity, e.evalquestion, e.evalanswer, e.evalanswerclass, 1 AS autoproposal
+   FROM ( SELECT DISTINCT opx_a_autoproposal.groupname, opx_a_autoproposal.orderid, opx_a_autoproposal.doctorid, opx_a_autoproposal.dateinlocaldts, opx_a_autoproposal.dateinvoicedlocaldts, opx_a_autoproposal.toothnumber AS toothstr, 1 AS quantity
+           FROM tableau.opx_a_autoproposal) ap
+   JOIN fct.caseevaluationsurvey e ON ap.orderid = e.evalorderid;
+
+
+GRANT SELECT ON tableau.opi_sincenov2015_singlebruxzireval TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opi_sincenov2015_singlebruxzireval TO cloudbeam;
+GRANT SELECT ON tableau.opi_sincenov2015_singlebruxzireval TO _ops;
+
+
+COMMIT;

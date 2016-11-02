@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.opx_a_centralizeddesignssummary
+(
+  caseid,
+  orderguid,
+  startscantime,
+  endqctime,
+  scannerserial,
+  scanlocationid,
+  scanlocationname,
+  scantech,
+  scanunits,
+  scancount,
+  scantimeinseconds,
+  designlocationid,
+  designlocationname,
+  designtech,
+  designunits,
+  designcount,
+  designtimeinseconds,
+  qclocationid,
+  qclocationname,
+  qctech,
+  qcunits,
+  qccount,
+  workflow
+)
+AS 
+ SELECT cds.caseid, cds.orderguid, cds.startscantime, cds.endqctime, cds.scannerserial, cds.scanlocationid, cds.scanlocationname, cds.scantech, cds.scanunits, cds.scancount, cds.scantimeinseconds, cds.designlocationid, cds.designlocationname, cds.designtech, cds.designunits, cds.designcount, cds.designtimeinseconds, cds.qclocationid, cds.qclocationname, cds.qctech, cds.qcunits, cds.qccount, cds.workflow
+   FROM sum.centralizeddesignssummary cds;
+
+
+GRANT SELECT ON tableau.opx_a_centralizeddesignssummary TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_centralizeddesignssummary TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_centralizeddesignssummary TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_centralizeddesignssummary TO _ops;
+
+
+COMMIT;

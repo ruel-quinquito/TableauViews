@@ -1,0 +1,41 @@
+CREATE OR REPLACE VIEW tableau.ums_userhistoryactivity
+(
+  user_name,
+  user_email,
+  user_groupid,
+  action_performed_on_user_account,
+  action_performed_by_user,
+  role_id_user_belongsto,
+  role_name_user_belongsto,
+  roles_description,
+  date_role_added,
+  date_user_was_created,
+  date_user_last_disabled,
+  date_user_last_deleted,
+  date_user_last_enabled
+)
+AS 
+ SELECT upper((u.user_lastname::text || ', '::character varying::text) || u.user_firstname::text)::character varying AS user_name, upper(u.user_email::text) AS user_email, u.user_groupid, u.meta_action AS action_performed_on_user_account, upper(u.meta_user_email::text) AS action_performed_by_user, r.roles_id AS role_id_user_belongsto, upper(r.roles_name::text) AS role_name_user_belongsto, r.roles_descrtiption AS roles_description, u.created_utc AS date_role_added, u.user_created AS date_user_was_created, udi.date_user_last_disabled, ude.date_user_last_deleted, uen.date_user_last_enabled
+   FROM import.cp_umsuser u
+   LEFT JOIN import.cp_umsuserupdatewithroles r ON u.messageid = r.messageid
+   LEFT JOIN ( SELECT cp_umsuser.user_email, cp_umsuser.meta_action, cp_umsuser.messageid, "max"(cp_umsuser.created_utc::timestamp without time zone) AS date_user_last_disabled
+      FROM import.cp_umsuser
+     WHERE cp_umsuser.meta_action::text = 'UserDisabled'::character varying::text
+     GROUP BY cp_umsuser.user_email, cp_umsuser.meta_action, cp_umsuser.messageid) udi ON u.user_email::text = udi.user_email::text AND u.messageid = udi.messageid
+   LEFT JOIN ( SELECT cp_umsuser.user_email, cp_umsuser.meta_action, cp_umsuser.messageid, "max"(cp_umsuser.created_utc::timestamp without time zone) AS date_user_last_deleted
+   FROM import.cp_umsuser
+  WHERE cp_umsuser.meta_action::text = 'UserDeleted'::character varying::text
+  GROUP BY cp_umsuser.user_email, cp_umsuser.meta_action, cp_umsuser.messageid) ude ON u.user_email::text = ude.user_email::text AND u.messageid = ude.messageid
+   LEFT JOIN ( SELECT use.user_email, use.meta_action, use.messageid, "max"(use.created_utc::timestamp without time zone) AS date_user_last_enabled
+   FROM import.cp_umsuser use
+  WHERE use.meta_action::text = 'UserEnabled'::character varying::text
+  GROUP BY use.user_email, use.meta_action, use.messageid) uen ON u.user_email::text = uen.user_email::text AND u.messageid = uen.messageid
+  ORDER BY u.user_email, u.created_utc;
+
+
+GRANT SELECT ON tableau.ums_userhistoryactivity TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.ums_userhistoryactivity TO cloudbeam;
+GRANT SELECT ON tableau.ums_userhistoryactivity TO _ops;
+
+
+COMMIT;

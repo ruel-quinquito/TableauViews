@@ -1,0 +1,78 @@
+CREATE OR REPLACE VIEW tableau.csd_a_crmtixncalls
+(
+  ticketnumber,
+  ticketcreatedon,
+  ticketmodifiedon,
+  ticketcreatedby,
+  ticketowner,
+  ticketescalatedto,
+  ticketcontact,
+  ticketsubject,
+  tickettitle,
+  ticketstatus,
+  ticketresolution,
+  ticketkbarticle,
+  tickettransferfromcsr,
+  ticketaccountdepartment,
+  tickettimespentminutes,
+  ticketbilledserviceunits,
+  ticketaccountnumber,
+  taskowner,
+  tasktimespent,
+  ticketownerteam,
+  resourcename,
+  teamname,
+  eventdatetime,
+  loggedintime,
+  atdeskaftercallwork,
+  break1,
+  break2,
+  meeting,
+  productionfloor,
+  quickbreakrestroom,
+  training,
+  itsupport,
+  agentreceivednonacdcall,
+  agentwentoffhookoutboundcall,
+  callsonholdcount,
+  sumholdtime,
+  contactnotacceptedagentletacallgorna,
+  timeinother,
+  connecttime,
+  talktime,
+  totalacdcalls,
+  totalnotreadytime,
+  nonacdinbound,
+  nonacdoutbound,
+  transfer,
+  totalworktime,
+  totalreadytime,
+  totalreservedtime,
+  acdhandledcount,
+  acdoverflowcount,
+  acdabandonedcount,
+  callsmadehandledcount,
+  callsmadeoverflowcount,
+  callsmadeabandonedcount,
+  daysworked,
+  rnacount
+)
+AS 
+ SELECT c.ticketnumber, c.ticketcreatedon, c.ticketmodifiedon, c.ticketcreatedby, c.ticketowner, c.ticketescalatedto, c.ticketcontact, c.ticketsubject, c.tickettitle, c.ticketstatus, c.ticketresolution, c.ticketkbarticle, c.tickettransferfromcsr, c.ticketaccountdepartment, c.tickettimespentminutes, c.ticketbilledserviceunits, c.ticketaccountnumber, c.taskowner, c.tasktimespent, c.ticketownerteam, i.resourcename, i.teamname, i.eventdatetime, i.loggedintime, i.atdeskaftercallwork, i.break1, i.break2, i.meeting, i.productionfloor, i.quickbreakrestroom, i.training, i.itsupport, i.agentreceievednonacdcall AS agentreceivednonacdcall, i.agentwentoffhookoutboundcall, i.callsonholdcount, i.sumholdtime, i.contactnotacceptedagentletacallgorna, i.timeinother, i.connecttime, i.talktime, i.totalacdcalls, i.totalnotreadytime, i.nonacdinbound, i.nonacdoutbound, i.transfer, i.totalworktime, i.totalreadytime, i.totalreservedtime, i.acdhandledcount, i.acdoverflowcount, i.acdabandonedcount, i.callsmadehandledcount, i.callsmadeoverflowcount, i.callsmadeabandonedcount, i.daysworked, i.rnacount
+   FROM ( SELECT crm.ticketnumber, crm.ticketcreatedon, crm.ticketmodifiedon, crm.ticketcreatedby, crm.ticketowner, crm.ticketescalatedto, crm.ticketcontact, crm.ticketsubject, crm.tickettitle, crm.ticketstatus, crm.ticketresolution, crm.ticketkbarticle, crm.tickettransferfromcsr, crm.ticketaccountdepartment, crm.tickettimespentminutes, crm.ticketbilledserviceunits, crm.ticketaccountnumber, crm.taskowner, crm.tasktimespent, crm.ticketteamowner AS ticketownerteam, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY crm.ticketowner, crm.ticketmodifiedon::date
+          ORDER BY crm.ticketmodifiedon) AS rownum2
+           FROM fct.crmdynamics crm
+          WHERE crm.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crm.ticketteamowner::text <> 'Glidewell Laboratories'::character varying::text AND crm.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) c
+   LEFT JOIN sum.informixagentdetails i ON c.ticketowner::text = i.resourcename::text AND c.ticketmodifiedon::date::timestamp without time zone = i.eventdatetime AND c.rownum2 = 1;
+
+
+GRANT SELECT ON tableau.csd_a_crmtixncalls TO _anthonyo;
+GRANT SELECT ON tableau.csd_a_crmtixncalls TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.csd_a_crmtixncalls TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.csd_a_crmtixncalls TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.csd_a_crmtixncalls TO _ops;
+
+
+COMMIT;

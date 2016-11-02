@@ -1,0 +1,68 @@
+CREATE OR REPLACE VIEW tableau.dim_a_date
+(
+  datekey,
+  date,
+  dayofmonth,
+  daysuffix,
+  dayname,
+  daynameabbrv,
+  dayofweek,
+  dayofweekinmonth,
+  dayofweekinyear,
+  dayofquarter,
+  dayofyear,
+  weekofmonth,
+  weekofquarter,
+  weekofyear,
+  month,
+  monthname,
+  monthnameabbrv,
+  monthofquarter,
+  quarter,
+  quartername,
+  year,
+  yearname,
+  monthyear,
+  firstdayofmonth,
+  lastdayofmonth,
+  firstdayofquarter,
+  lastdayofquarter,
+  firstdayofyear,
+  lastdayofyear,
+  isweekday,
+  labholidayname,
+  islabholiday_10,
+  isworkday_10,
+  islabholiday_20,
+  isworkday_20,
+  islabholiday_30,
+  isworkday_30,
+  islabholiday_40,
+  isworkday_40,
+  islabholiday_45,
+  isworkday_45,
+  islabholiday_50,
+  isworkday_50,
+  islabholiday_60,
+  isworkday_60,
+  islabholiday_62,
+  isworkday_62,
+  islabholiday_65,
+  isworkday_65,
+  islabholiday_70,
+  isworkday_70,
+  islabholiday_80,
+  isworkday_80
+)
+AS 
+ SELECT date.datekey, date.date, date.dayofmonth, date.daysuffix, date.dayname, date.daynameabbrv, date.dayofweek, date.dayofweekinmonth, date.dayofweekinyear, date.dayofquarter, date.dayofyear, date.weekofmonth, date.weekofquarter, date.weekofyear, date."month", date.monthname, date.monthnameabbrv, date.monthofquarter, date.quarter, date.quartername, date."year", date.yearname, date.monthyear, date.firstdayofmonth, date.lastdayofmonth, date.firstdayofquarter, date.lastdayofquarter, date.firstdayofyear, date.lastdayofyear, date.isweekday, date.labholidayname, date.islabholiday_10, date.isworkday_10, date.islabholiday_20, date.isworkday_20, date.islabholiday_30, date.isworkday_30, date.islabholiday_40, date.isworkday_40, date.islabholiday_45, date.isworkday_45, date.islabholiday_50, date.isworkday_50, date.islabholiday_60, date.isworkday_60, date.islabholiday_62, date.isworkday_62, date.islabholiday_65, date.isworkday_65, date.islabholiday_70, date.isworkday_70, date.islabholiday_80, date.isworkday_80
+   FROM dim.date;
+
+
+GRANT SELECT ON tableau.dim_a_date TO _anthonyo;
+GRANT SELECT ON tableau.dim_a_date TO _lucy;
+GRANT SELECT ON tableau.dim_a_date TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.dim_a_date TO cloudbeam;
+
+
+COMMIT;

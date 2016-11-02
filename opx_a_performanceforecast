@@ -1,0 +1,43 @@
+CREATE OR REPLACE VIEW tableau.opx_a_performanceforecast
+(
+  orderid,
+  doctorid,
+  orderproductid,
+  productid,
+  yearin,
+  monthin,
+  datein,
+  datekeyin,
+  yearinvoiced,
+  monthinvoiced,
+  dateinvoiced,
+  datekeyinvoiced,
+  allocationtypeid,
+  allocationdirection,
+  allocationtype,
+  pf_facilityid,
+  pf_departmentid,
+  pf_productline,
+  pf_producttype,
+  pf_productgroup,
+  pf_isactualunit,
+  pf_quantity,
+  pf_netsales,
+  inhousesale,
+  internationalsale,
+  territoryid,
+  salespersonid
+)
+AS 
+ SELECT performanceforecast.orderid, performanceforecast.doctorid, performanceforecast.orderproductid, performanceforecast.productid, performanceforecast.yearin, performanceforecast.monthin, performanceforecast.datein, performanceforecast.datekeyin, performanceforecast.yearinvoiced, performanceforecast.monthinvoiced, performanceforecast.dateinvoiced, performanceforecast.datekeyinvoiced, performanceforecast.allocationtypeid, performanceforecast.allocationdirection, performanceforecast.allocationtype, performanceforecast.pf_facilityid, performanceforecast.pf_departmentid, performanceforecast.pf_productline, performanceforecast.pf_producttype, performanceforecast.pf_productgroup, performanceforecast.pf_isactualunit, performanceforecast.pf_quantity, performanceforecast.pf_netsales, performanceforecast.inhousesale, performanceforecast.internationalsale, performanceforecast.territoryid, performanceforecast.salespersonid
+   FROM cal.performanceforecast;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_a_performanceforecast TO _tableau;
+GRANT SELECT ON tableau.opx_a_performanceforecast TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_performanceforecast TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opx_a_performanceforecast TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_a_performanceforecast TO cloudbeam;
+
+
+COMMIT;

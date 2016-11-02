@@ -1,0 +1,52 @@
+CREATE OR REPLACE VIEW tableau.css_a_dailycompliance
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  id,
+  resourcename,
+  teamname,
+  eventdatetime,
+  loggedintime,
+  "atdesk(aftercallwork)",
+  break1,
+  break2,
+  lunch,
+  meeting,
+  productionfloor,
+  "quickbreak(restroom)",
+  training,
+  itsupport,
+  "agentreceievednon-acdcall",
+  "agnetwentoff-hook(outboundcall)",
+  callsonholdcount,
+  sumholdtime,
+  "contactnotaccepted/agentletacallgorna",
+  timeinother,
+  connecttime,
+  talktime,
+  totalacdcalls,
+  totalnotreadytime,
+  nonacdinbound,
+  nonacdoutbound,
+  totalworktime,
+  transfer,
+  daysworked,
+  totalreservedtime
+)
+AS 
+ SELECT informixagentdetails.recordinsertedlocaldts, COALESCE(informixagentdetails.recordmodifiedlocaldts, informixagentdetails.recordinsertedlocaldts) AS recordmodifiedlocaldts, informixagentdetails.id, informixagentdetails.resourcename, informixagentdetails.teamname, informixagentdetails.eventdatetime, informixagentdetails.loggedintime, informixagentdetails.atdeskaftercallwork AS "atdesk(aftercallwork)", informixagentdetails.break1, informixagentdetails.break2, informixagentdetails.lunch, informixagentdetails.meeting, informixagentdetails.productionfloor, informixagentdetails.quickbreakrestroom AS "quickbreak(restroom)", informixagentdetails.training, informixagentdetails.itsupport, informixagentdetails.agentreceievednonacdcall AS "agentreceievednon-acdcall", informixagentdetails.agentwentoffhookoutboundcall AS "agnetwentoff-hook(outboundcall)", informixagentdetails.callsonholdcount, informixagentdetails.sumholdtime, informixagentdetails.contactnotacceptedagentletacallgorna AS "contactnotaccepted/agentletacallgorna", informixagentdetails.timeinother, informixagentdetails.connecttime, informixagentdetails.talktime, informixagentdetails.totalacdcalls, informixagentdetails.totalnotreadytime, informixagentdetails.nonacdinbound, informixagentdetails.nonacdoutbound, informixagentdetails.totalworktime, informixagentdetails.transfer, informixagentdetails.daysworked, informixagentdetails.totalreservedtime
+   FROM sum.informixagentdetails informixagentdetails;
+
+
+GRANT SELECT ON tableau.css_a_dailycompliance TO _henryc;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _kelseyo;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _anthonyo;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _lucy;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _tableau;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _katiet;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.css_a_dailycompliance TO cloudbeam;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _johns;
+GRANT SELECT ON tableau.css_a_dailycompliance TO _ops;
+
+
+COMMIT;

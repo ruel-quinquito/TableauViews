@@ -1,0 +1,42 @@
+CREATE OR REPLACE VIEW tableau.opx_a_casefileattachments
+(
+  id,
+  datasource,
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  casefileattachmentid,
+  doctorid,
+  caseid,
+  patientfirst,
+  patientlast,
+  notes,
+  filename,
+  filepath,
+  originalfilepath,
+  whoentered,
+  lastname,
+  firstname,
+  facilityid,
+  recordsequence,
+  whenentered,
+  deleted,
+  originalfilename,
+  syncid,
+  department,
+  servername,
+  fileattachmenttypeid
+)
+AS 
+ SELECT DISTINCT a.id, a."datasource", a.recordinsertedlocaldts, a.recordmodifiedlocaldts, a.casefileattachmentid, a.doctorid, a.caseid, a.patientfirst, a.patientlast, a.notes, a.filename, a.filepath, a.originalfilepath, a.whoentered, b.lastname, b.firstname, b.facilityid, b.recordsequence, a.whenentered, a.deleted, a.originalfilename, a.syncid, a.department, a.servername, a.fileattachmenttypeid
+   FROM fct.casefileattachments a
+   LEFT JOIN fct.gpemployee b ON a.whoentered::text = b.employeeid::text;
+
+
+GRANT SELECT ON tableau.opx_a_casefileattachments TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_casefileattachments TO _lucy;
+GRANT SELECT ON tableau.opx_a_casefileattachments TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_casefileattachments TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_casefileattachments TO _ops;
+
+
+COMMIT;

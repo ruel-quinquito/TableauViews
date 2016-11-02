@@ -1,0 +1,35 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cloudpointorder
+(
+  orderid,
+  sourcesystem,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  actualdaysinlab,
+  returnorderid,
+  istestdoctor,
+  ordertypeid,
+  ordertype,
+  netsales,
+  shippingstate,
+  orderproductid,
+  productid,
+  toothstr,
+  quantity
+)
+AS 
+ SELECT o.orderid, co.sourcesystem, o.doctorid, o.dateinlocaldts, o.dateinvoicedlocaldts, co.actualdaysinlab, co.returnorderid, d.istestdoctor, o.ordertypeid, o.ordertype, COALESCE(oi.totalcharge, 0::numeric) - COALESCE(oi.totaltax, 0::numeric) AS netsales, d.shippingstate, oi.orderproductid, oi.productid, oi.toothstr, oi.quantity
+   FROM fct."order" o
+   JOIN cal."order" co ON co.orderid = o.orderid AND (upper(co.sourcesystem::text) = 'CLOUDPOINT-DESIGN'::text OR upper(co.sourcesystem::text) = 'CLOUDPOINT-SCAN'::text)
+   JOIN dim.doctors d ON d.doctorid::text = o.doctorid::text
+   LEFT JOIN fct.orderitem oi ON oi.orderid = o.orderid AND oi.toothstr::text > ''::text
+  WHERE o.dateinlocaldts >= '2015-02-15 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_a_cloudpointorder TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_cloudpointorder TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cloudpointorder TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cloudpointorder TO _ops;
+
+
+COMMIT;

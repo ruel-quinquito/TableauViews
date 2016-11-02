@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opi_2y_shippingdeptpayroll
+(
+  taskperformedby,
+  taskcompleteddate,
+  taskname,
+  orderid,
+  originfacility,
+  originfacilityid,
+  remakeid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  doctorid,
+  patientname
+)
+AS 
+ SELECT t.taskperformedby, t.taskcompleteddate, ltrim(rtrim(t.taskname::text)) AS taskname, o.orderid, o.originfacility, o.originfacilityid, o.remakeid, o.dateinlocaldts, o.dateinvoicedlocaldts, o.doctorid, o.patientfirstname::text + ' '::character varying::text + o.patientlastname::text AS patientname
+   FROM fct."order" o
+   JOIN ( SELECT ctl.taskorderid AS orderid, ctl.taskperformedby, ctl.taskcompleteddate, ctl.taskname
+           FROM fct.casetaskslog ctl
+          WHERE ctl.taskcompleteddate > date_add('month'::character varying::text, - 6::bigint, date_trunc('month'::character varying::text, 'now'::character varying::date::timestamp without time zone)) AND (ctl.taskname::text = 'NEWCASE'::character varying::text OR ctl.taskname::text = 'INVOICE'::character varying::text OR ctl.taskname::text = 'PACKER'::character varying::text OR ctl.taskname::text = 'UNPACKER'::character varying::text OR ctl.taskname::text = 'CREDITINVOICE'::character varying::text)) t ON t.orderid = o.orderid
+  WHERE o.dateinlocaldts > date_add('month'::character varying::text, - 6::bigint, date_trunc('month'::character varying::text, 'now'::character varying::date::timestamp without time zone)) AND o.originfacilityid < 70;
+
+
+GRANT SELECT ON tableau.opi_2y_shippingdeptpayroll TO _anthonyo;
+GRANT SELECT ON tableau.opi_2y_shippingdeptpayroll TO _lucy;
+GRANT SELECT ON tableau.opi_2y_shippingdeptpayroll TO _tableau;
+GRANT SELECT ON tableau.opi_2y_shippingdeptpayroll TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opi_2y_shippingdeptpayroll TO cloudbeam;
+GRANT SELECT ON tableau.opi_2y_shippingdeptpayroll TO _ops;
+
+
+COMMIT;

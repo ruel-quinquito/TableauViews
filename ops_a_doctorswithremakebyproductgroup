@@ -1,0 +1,40 @@
+CREATE OR REPLACE VIEW tableau.ops_a_doctorswithremakebyproductgroup
+(
+  pf_productgroup,
+  practicename,
+  accountid,
+  firstname,
+  lastname,
+  workphone,
+  firstinvoiced,
+  lastinvoiced,
+  returntype,
+  returnquantity,
+  quantity,
+  gotreturned,
+  lastreturned
+)
+AS 
+ SELECT c.pf_productgroup, a.practicename, a.accountid, a.firstname, a.lastname, a.workphone, b.firstinvoiced, b.lastinvoiced, d.returntype, d.returnquantity, c.quantity, d.gotreturned, d.lastreturned
+   FROM ( SELECT accounts.practicename, accounts.accountid, accounts.firstname, accounts.lastname, accounts.workphone
+           FROM dim.accounts) a
+   JOIN ( SELECT order360infobypart.doctorid, min(order360infobypart.dateinvoiceddtslocal) AS firstinvoiced, "max"(order360infobypart.dateinvoiceddtslocal) AS lastinvoiced
+           FROM agg.order360infobypart
+          WHERE order360infobypart.pf_isactualunit::text = 1::text AND upper(order360infobypart.transactiontype::text) = 'NEW'::text
+          GROUP BY order360infobypart.doctorid) b ON a.accountid::text = b.doctorid::text
+   JOIN ( SELECT order360infobypart.pf_productgroup, order360infobypart.doctorid, sum(order360infobypart.partquantity) AS quantity
+      FROM agg.order360infobypart
+     WHERE order360infobypart.pf_isactualunit::text = 1::text
+     GROUP BY order360infobypart.pf_productgroup, order360infobypart.doctorid) c ON a.accountid::text = c.doctorid::text
+   JOIN ( SELECT order360infobypart.pf_productgroup, order360infobypart.doctorid, order360infobypart.returntype, sum(order360infobypart.returnquantity) AS returnquantity, order360infobypart.gotreturned, "max"(order360infobypart.returnorderdateindtslocal) AS lastreturned
+   FROM agg.order360infobypart
+  WHERE order360infobypart.pf_isactualunit::text = 1::text AND upper(order360infobypart.returntype::text) = 'REMAKE'::text
+  GROUP BY order360infobypart.pf_productgroup, order360infobypart.returntype, order360infobypart.doctorid, order360infobypart.gotreturned) d ON a.accountid::text = d.doctorid::text AND c.pf_productgroup::text = d.pf_productgroup::text;
+
+
+GRANT SELECT ON tableau.ops_a_doctorswithremakebyproductgroup TO _lucy;
+GRANT SELECT ON tableau.ops_a_doctorswithremakebyproductgroup TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.ops_a_doctorswithremakebyproductgroup TO cloudbeam;
+
+
+COMMIT;

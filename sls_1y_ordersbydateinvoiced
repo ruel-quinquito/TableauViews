@@ -1,0 +1,61 @@
+CREATE OR REPLACE VIEW tableau.sls_1y_ordersbydateinvoiced
+(
+  orderid,
+  orderproductid,
+  doctorid,
+  customertypeid,
+  practicename,
+  groupid,
+  city,
+  billcity,
+  billstate,
+  territoryid,
+  istestdoctor,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  ordertype,
+  originfacility,
+  postdatelocaldts,
+  isanterior,
+  isbridge,
+  quantity,
+  productionfacility,
+  discount,
+  totalcharge,
+  totaltax,
+  productid,
+  pf_departmentid,
+  pf_productgroup,
+  pf_productline,
+  pf_isactualunit,
+  salescategory,
+  glcategory,
+  satellitecategory,
+  daysworkedcurrent,
+  daysworkedprev,
+  departmentid,
+  bundlequantity,
+  enteredby,
+  shipouttrackingnumber,
+  remakedepartment,
+  remakecategory,
+  sourcesystem,
+  sourcesystemscanner
+)
+AS 
+ SELECT o.orderid, o.orderproductid, o.doctorid, d.customertypeid, o.practicename, o.groupid, o.city, o.billcity, o.billstate, o.territoryid, o.istestdoctor, o.dateinlocaldts, o.dateinvoicedlocaldts, o.ordertype, o.originfacility, o.postdatelocaldts, o.isanterior, o.isbridge, o.quantity, o.productionfacility, o.discount, o.totalcharge, o.totaltax, o.productid, o.pf_departmentid, o.pf_productgroup, o.pf_productline, o.pf_isactualunit, o.salescategory, o.glcategory, o.satellitecategory, o.daysworkedcurrent, o.daysworkedprev, o.departmentid, o.bundlequantity, o.enteredby, o.shipouttrackingnumber, o.remakedepartment, o.remakecategory, o1.sourcesystem, o1.sourcesystemscanner
+   FROM sum.orders2yearsdateinvoiced o
+   LEFT JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+   LEFT JOIN cal."order" o1 ON o1.orderid = o.orderid
+  WHERE o.dateinvoicedlocaldts >= (( SELECT getdate() - '1 year'::interval));
+
+
+GRANT SELECT ON tableau.sls_1y_ordersbydateinvoiced TO _anthonyo;
+GRANT SELECT ON tableau.sls_1y_ordersbydateinvoiced TO _lucy;
+GRANT SELECT ON tableau.sls_1y_ordersbydateinvoiced TO _tableau;
+GRANT SELECT ON tableau.sls_1y_ordersbydateinvoiced TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_1y_ordersbydateinvoiced TO cloudbeam;
+GRANT SELECT ON tableau.sls_1y_ordersbydateinvoiced TO _ops;
+
+
+COMMIT;

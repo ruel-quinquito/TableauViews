@@ -1,0 +1,33 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountstatusbydepartment
+(
+  doctorid,
+  originfacilityid,
+  accountdeptstatusseqid,
+  orderid,
+  pf_departmentid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  departmentfirst,
+  departmentrestart,
+  departmentrestartseqid,
+  departmentlastinvoiced,
+  departmentlastin,
+  masteraccountid,
+  masteraccountoriginfacilityid,
+  orderproductid,
+  productid
+)
+AS 
+ SELECT accountstatusbydepartment.doctorid, accountstatusbydepartment.originfacilityid, accountstatusbydepartment.accountdeptstatusseqid, accountstatusbydepartment.orderid, accountstatusbydepartment.pf_departmentid, accountstatusbydepartment.dateinlocaldts, accountstatusbydepartment.dateinvoicedlocaldts, accountstatusbydepartment.departmentfirst, accountstatusbydepartment.departmentrestart, accountstatusbydepartment.departmentrestartseqid, accountstatusbydepartment.departmentlastinvoiced, accountstatusbydepartment.departmentlastin, accountstatusbydepartment.masteraccountid, accountstatusbydepartment.masteraccountoriginfacilityid, accountstatusbydepartment.orderproductid, accountstatusbydepartment.productid
+   FROM cal.accountstatusbydepartment
+  WHERE accountstatusbydepartment.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval));
+
+
+GRANT SELECT ON tableau.opx_a_accountstatusbydepartment TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_accountstatusbydepartment TO executive;
+GRANT SELECT ON tableau.opx_a_accountstatusbydepartment TO _lucy;
+GRANT SELECT ON tableau.opx_a_accountstatusbydepartment TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_accountstatusbydepartment TO cloudbeam;
+
+
+COMMIT;

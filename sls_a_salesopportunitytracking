@@ -1,0 +1,35 @@
+CREATE OR REPLACE VIEW tableau.sls_a_salesopportunitytracking
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  recordidchecksum,
+  fromtableguid,
+  recordcreatedby,
+  recordcreatedon,
+  recordmodifiedby,
+  recordmodifiedon,
+  doctorid,
+  typeofcall,
+  contacttype,
+  doctorresponse,
+  callcentercallingfrom,
+  recordactivitystatus,
+  notes,
+  finalcomments,
+  recoveredon,
+  notrecoveredreason
+)
+AS 
+ SELECT salesopportunitytracking.recordinsertedlocaldts, salesopportunitytracking.recordmodifiedlocaldts, salesopportunitytracking.recordidchecksum, salesopportunitytracking.fromtableguid, salesopportunitytracking.recordcreatedby, salesopportunitytracking.recordcreatedon, salesopportunitytracking.recordmodifiedby, salesopportunitytracking.recordmodifiedon, salesopportunitytracking.doctorid, salesopportunitytracking.typeofcall, salesopportunitytracking.contacttype, salesopportunitytracking.doctorresponse, salesopportunitytracking.callcentercallingfrom, salesopportunitytracking.recordactivitystatus, salesopportunitytracking.notes, salesopportunitytracking.finalcomments, salesopportunitytracking.recoveredon, salesopportunitytracking.notrecoveredreason
+   FROM sum.salesopportunitytracking;
+
+
+GRANT SELECT, TRIGGER, REFERENCES, RULE, UPDATE, DELETE, INSERT ON tableau.sls_a_salesopportunitytracking TO _tableau;
+GRANT UPDATE, REFERENCES, DELETE, RULE, TRIGGER, SELECT, INSERT ON tableau.sls_a_salesopportunitytracking TO executive;
+GRANT SELECT ON tableau.sls_a_salesopportunitytracking TO _anthonyo;
+GRANT SELECT ON tableau.sls_a_salesopportunitytracking TO _lucy;
+GRANT INSERT, UPDATE, DELETE, RULE, SELECT, TRIGGER, REFERENCES ON tableau.sls_a_salesopportunitytracking TO management;
+GRANT DELETE, REFERENCES, INSERT, TRIGGER, SELECT, UPDATE, RULE ON tableau.sls_a_salesopportunitytracking TO cloudbeam;
+
+
+COMMIT;

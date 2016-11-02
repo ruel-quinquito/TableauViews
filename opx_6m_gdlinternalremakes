@@ -1,0 +1,26 @@
+CREATE OR REPLACE VIEW tableau.opx_6m_gdlinternalremakes
+(
+  caseid,
+  taskid,
+  qcdepartment,
+  qctechid,
+  qcdate,
+  qctime,
+  techid,
+  producttypeid,
+  reason,
+  additionalcomments
+)
+AS 
+ SELECT gdlinternalremakes.caseid, gdlinternalremakes.taskid, gdlinternalremakes.qcdepartment, gdlinternalremakes.qctechid, gdlinternalremakes.qcdate, gdlinternalremakes.qctime, gdlinternalremakes.techid, gdlinternalremakes.producttypeid, gdlinternalremakes.reason, gdlinternalremakes.additionalcomments
+   FROM sum.gdlinternalremakes
+  WHERE gdlinternalremakes.qcdate > (getdate() - '6 mons'::interval);
+
+
+GRANT SELECT ON tableau.opx_6m_gdlinternalremakes TO _anthonyo;
+GRANT SELECT ON tableau.opx_6m_gdlinternalremakes TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opx_6m_gdlinternalremakes TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_6m_gdlinternalremakes TO cloudbeam;
+
+
+COMMIT;

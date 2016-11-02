@@ -1,0 +1,64 @@
+CREATE OR REPLACE VIEW tableau.sls_3y_marketingbyaccountstatus
+(
+  sourcetable,
+  doctorid,
+  originfacility,
+  originfacilityid,
+  accountstatusseqid,
+  orderid,
+  pf_departmentid,
+  pf_productgroup,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  first,
+  restart,
+  restartseqid,
+  lastinvoiced,
+  lastin,
+  masteraccountid,
+  masteraccountoriginfacilityid,
+  orderproductid,
+  productid,
+  discountid,
+  coupondescription,
+  couponlettersprojectcode,
+  lettersprojectdescription,
+  couponmarketingtype,
+  couponfacilityintendedfor,
+  coupondiscounttype,
+  coupondiscountamount,
+  couponprojectcost,
+  couponsentamount,
+  couponsentdate
+)
+AS 
+( SELECT 'department' AS sourcetable, o.doctorid, o.originfacility, a.originfacilityid, a.accountdeptstatusseqid AS accountstatusseqid, a.orderid, a.pf_departmentid, NULL::"unknown" AS pf_productgroup, o.dateinlocaldts, o.dateinvoicedlocaldts, a.departmentfirst AS "first", a.departmentrestart AS "restart", a.departmentrestartseqid AS restartseqid, a.departmentlastinvoiced AS lastinvoiced, a.departmentlastin AS lastin, a.masteraccountid, a.masteraccountoriginfacilityid, a.orderproductid, a.productid, oi.discountid, mc.coupondescription, mc.lettersprojectcode AS couponlettersprojectcode, mc.lettersprojectdescription, mc.marketingtype AS couponmarketingtype, mc.redeemedatfacility AS couponfacilityintendedfor, mc.discounttype AS coupondiscounttype, mc.discountamount AS coupondiscountamount, mc.projectcost AS couponprojectcost, mc.sentamount AS couponsentamount, mc.sentdate AS couponsentdate
+   FROM cal.accountstatusbydepartment a
+   LEFT JOIN fct."order" o ON a.orderid::text = o.orderid::text
+   LEFT JOIN fct.orderitem oi ON a.orderid::text = oi.orderid::text AND a.orderproductid = oi.orderproductid
+   LEFT JOIN fct.marketingcampaign mc ON oi.discountid::text = mc.couponcode::text
+  WHERE a.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval))
+UNION 
+ SELECT 'lab' AS sourcetable, o.doctorid, o.originfacility, a.originfacilityid, a.accountstatusseqid, a.orderid, NULL::"unknown" AS pf_departmentid, NULL::"unknown" AS pf_productgroup, o.dateinlocaldts, o.dateinvoicedlocaldts, a.labfirst AS "first", a.labrestart AS "restart", a.labrestartseqid AS restartseqid, a.lablastinvoiced AS lastinvoiced, a.lablastin AS lastin, a.masteraccountid, a.masteraccountoriginfacilityid, a.orderproductid, a.productid, oi.discountid, mc.coupondescription, mc.lettersprojectcode AS couponlettersprojectcode, mc.lettersprojectdescription, mc.marketingtype AS couponmarketingtype, mc.redeemedatfacility AS couponfacilityintendedfor, mc.discounttype AS coupondiscounttype, mc.discountamount AS coupondiscountamount, mc.projectcost AS couponprojectcost, mc.sentamount AS couponsentamount, mc.sentdate AS couponsentdate
+   FROM cal.accountstatusbylab a
+   LEFT JOIN fct."order" o ON a.orderid::text = o.orderid::text
+   LEFT JOIN fct.orderitem oi ON a.orderid::text = oi.orderid::text AND a.orderproductid = oi.orderproductid
+   LEFT JOIN fct.marketingcampaign mc ON oi.discountid::text = mc.couponcode::text
+  WHERE a.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval)))
+UNION 
+ SELECT 'productgroup' AS sourcetable, o.doctorid, o.originfacility, a.originfacilityid, a.accountproductgroupstatusseqid AS accountstatusseqid, a.orderid, NULL::"unknown" AS pf_departmentid, a.pf_productgroup, o.dateinlocaldts, o.dateinvoicedlocaldts, a.productgroupfirst AS "first", a.productgrouprestart AS "restart", a.productgrouprestartseqid AS restartseqid, a.productgrouplastinvoiced AS lastinvoiced, a.productgrouplastin AS lastin, a.masteraccountid, a.masteraccountoriginfacilityid, a.orderproductid, a.productid, oi.discountid, mc.coupondescription, mc.lettersprojectcode AS couponlettersprojectcode, mc.lettersprojectdescription, mc.marketingtype AS couponmarketingtype, mc.redeemedatfacility AS couponfacilityintendedfor, mc.discounttype AS coupondiscounttype, mc.discountamount AS coupondiscountamount, mc.projectcost AS couponprojectcost, mc.sentamount AS couponsentamount, mc.sentdate AS couponsentdate
+   FROM cal.accountstatusbyproductgroup a
+   LEFT JOIN fct."order" o ON a.orderid::text = o.orderid::text
+   LEFT JOIN fct.orderitem oi ON a.orderid::text = oi.orderid::text AND a.orderproductid = oi.orderproductid
+   LEFT JOIN fct.marketingcampaign mc ON oi.discountid::text = mc.couponcode::text
+  WHERE a.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval));
+
+
+GRANT SELECT ON tableau.sls_3y_marketingbyaccountstatus TO _anthonyo;
+GRANT SELECT ON tableau.sls_3y_marketingbyaccountstatus TO executive;
+GRANT SELECT ON tableau.sls_3y_marketingbyaccountstatus TO _lucy;
+GRANT SELECT ON tableau.sls_3y_marketingbyaccountstatus TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_3y_marketingbyaccountstatus TO cloudbeam;
+
+
+COMMIT;

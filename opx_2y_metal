@@ -1,0 +1,66 @@
+CREATE OR REPLACE VIEW tableau.opx_2y_metal
+(
+  originfacility,
+  productionfacility,
+  orderid,
+  productid,
+  enteredby,
+  employeename,
+  doctorid,
+  doctorname,
+  patientname,
+  newcaseweight,
+  remakecaseweight,
+  quantity,
+  metal,
+  entereddate,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  unitgroupid,
+  pf_productgroup,
+  pf_productline,
+  pf_isactualunit
+)
+AS 
+ SELECT o.originfacility, oi.productionfacility, o.orderid, p.productid, oi.enteredby, (gp.firstname::text + ' '::text + gp.lastname::text)::character varying AS employeename, d.doctorid, (d.firstname::text + ' '::text + d.lastname::text)::character varying AS doctorname, (o.patientfirstname::text + ' '::text + o.patientlastname::text)::character varying AS patientname, 
+        CASE
+            WHEN oi.remakeid IS NULL THEN oi.quantity
+            ELSE 0.00
+        END AS newcaseweight, 
+        CASE
+            WHEN oi.remakeid::text > ''::text THEN oi.quantity
+            ELSE 0.00
+        END AS remakecaseweight, oi.quantity, p.metal, oi.entereddate, o.dateinlocaldts, o.dateinvoicedlocaldts, p.unitgroupid, p.pf_productgroup, p.pf_productline, p.pf_isactualunit
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON lower(oi.productid::text) = lower(p.productid::text)
+   LEFT JOIN tableau.dim_activeemployees gp ON oi.enteredby::text = gp.employeeid::text
+   JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+  WHERE o.ordertypeid = 0 AND p.metal = 1 AND oi.quantity > 0::numeric(11,5) AND oi.entereddate >= (getdate() - '2 years'::interval)
+UNION 
+ SELECT o.originfacility, oi.productionfacility, o.orderid, p.productid, oi.enteredby, (gp.firstname::text + ' '::text + gp.lastname::text)::character varying AS employeename, d.doctorid, (d.firstname::text + ' '::text + d.lastname::text)::character varying AS doctorname, (o.patientfirstname::text + ' '::text + o.patientlastname::text)::character varying AS patientname, 
+        CASE
+            WHEN oi.remakeid IS NULL THEN oi.quantity
+            ELSE 0.00
+        END AS newcaseweight, 
+        CASE
+            WHEN oi.remakeid::text > ''::text THEN oi.quantity
+            ELSE 0.00
+        END AS remakecaseweight, oi.quantity, p.metal, oi.entereddate, o.dateinlocaldts, o.dateinvoicedlocaldts, p.unitgroupid, p.pf_productgroup, p.pf_productline, p.pf_isactualunit
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON lower(oi.productid::text) = lower(p.productid::text)
+   LEFT JOIN tableau.dim_activeemployees gp ON oi.enteredby::text = gp.employeeid::text
+   JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+  WHERE o.ordertypeid = 0 AND p.pf_isactualunit::text = 1::text AND oi.quantity > 0::numeric(11,5) AND oi.entereddate >= (getdate() - '2 years'::interval);
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_2y_metal TO _tableau;
+GRANT SELECT ON tableau.opx_2y_metal TO _anthonyo;
+GRANT SELECT ON tableau.opx_2y_metal TO _lucy;
+GRANT SELECT ON tableau.opx_2y_metal TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_2y_metal TO cloudbeam;
+GRANT SELECT ON tableau.opx_2y_metal TO _ops;
+
+
+COMMIT;

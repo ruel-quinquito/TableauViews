@@ -1,0 +1,17 @@
+CREATE OR REPLACE VIEW tableau.css_a_hourlycompliance
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  id,
+  idfromcallhistorydetail,
+  sessionid,
+  applicationname,
+  startdatetime,
+  hourminutesecond,
+  callresult
+)
+AS 
+ SELECT informixapplicationcallsperhour.recordinsertedlocaldts, COALESCE(informixapplicationcallsperhour.recordmodifiedlocaldts, informixapplicationcallsperhour.recordinsertedlocaldts) AS recordmodifiedlocaldts, informixapplicationcallsperhour.id, informixapplicationcallsperhour.idfromcallhistorydetail, informixapplicationcallsperhour.sessionid, informixapplicationcallsperhour.applicationname, informixapplicationcallsperhour.startdatetime, informixapplicationcallsperhour.hourminutesecond, informixapplicationcallsperhour.callresult
+   FROM sum.informixapplicationcallsperhour;
+
+COMMIT;

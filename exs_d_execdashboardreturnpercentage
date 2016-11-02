@@ -1,0 +1,206 @@
+CREATE OR REPLACE VIEW tableau.exs_d_execdashboardreturnpercentage
+(
+  remakedepartment,
+  managername,
+  returnrate,
+  maxreturnrate
+)
+AS 
+ SELECT rtrim(rr.remakedepartment) AS remakedepartment, rr.managername, rr.returnrate, ( SELECT "max"(r1.returnrate) AS "max"
+           FROM ( SELECT upper(p.remakedepartment::text) AS remakedepartment, "ts".totalqty AS totalsold, tr.totalqty AS totalreturn, (tr.totalqty::double precision / "ts".totalqty::double precision)::numeric(11,5) AS returnrate, "ts".managername
+                   FROM dim.products p
+              JOIN ( SELECT s.remakedepartment, sum(s.quantity) AS totalqty, s.managername
+                           FROM ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                                   FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                                           FROM fct."order" o
+                                      JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                                     WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                              JOIN dim.products p ON ccp.productid::text = p.productid::text
+                         JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                                      FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                                              FROM dim.products p
+                                         JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                                      FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                                   UNION 
+                                                            SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                                   UNION 
+                                                            SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+                        WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '30 days'::interval) AND ccp.remakeid IS NULL AND p.remakecategory::text > ''::text AND ccp.ordertypeid = 0 AND ccp.productionfacility::text = '10-GDL'::text) s
+                          GROUP BY s.remakedepartment, s.managername) "ts" ON upper(p.remakedepartment::text) = "ts".remakedepartment
+         JOIN ( SELECT r.remakedepartment, sum(r.quantity) AS totalqty, r.managername
+                      FROM ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                              FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                                      FROM fct."order" o
+                                 JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                                WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                         JOIN ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                                      FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                                              FROM fct."order" o
+                                         JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                                        WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                                 JOIN dim.products p ON ccp.productid::text = p.productid::text
+                            JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                                         FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                                                 FROM dim.products p
+                                            JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                                         FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                                      UNION 
+                                                               SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                                      UNION 
+                                                               SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+                           WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '30 days'::interval) AND ccp.remakeid IS NULL AND p.remakecategory::text > ''::text AND ccp.ordertypeid = 0 AND ccp.productionfacility::text = '10-GDL'::text) su ON ccp.remakeof = su.orderid
+                    JOIN dim.products p ON ccp.productid::text = p.productid::text
+               JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                            FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                                    FROM dim.products p
+                               JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                            FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                         UNION 
+                                                  SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                         UNION 
+                                                  SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+              WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval) AND p.remakecategory::text > ''::text AND (ccp.remakeid::text > ''::text AND ccp.ordertypeid = 0 OR ccp.ordertypeid = 1 AND ccp.isforsurcharge::text = 1::text) AND ccp.productionfacility::text = '10-GDL'::text) r
+                     GROUP BY r.remakedepartment, r.managername) tr ON upper(p.remakedepartment::text) = tr.remakedepartment
+        GROUP BY upper(p.remakedepartment::text), "ts".managername, "ts".totalqty, tr.totalqty) r1) AS maxreturnrate
+   FROM ( SELECT upper(p.remakedepartment::text) AS remakedepartment, "ts".totalqty AS totalsold, tr.totalqty AS totalreturn, (tr.totalqty::double precision / "ts".totalqty::double precision)::numeric(11,5) AS returnrate, "ts".managername
+           FROM dim.products p
+      JOIN ( SELECT s.remakedepartment, sum(s.quantity) AS totalqty, s.managername
+                   FROM ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                           FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                                   FROM fct."order" o
+                              JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                             WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                      JOIN dim.products p ON ccp.productid::text = p.productid::text
+                 JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                              FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                                      FROM dim.products p
+                                 JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                              FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                           UNION 
+                                                    SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                           UNION 
+                                                    SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+                WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '30 days'::interval) AND ccp.remakeid IS NULL AND p.remakecategory::text > ''::text AND ccp.ordertypeid = 0 AND ccp.productionfacility::text = '10-GDL'::text) s
+                  GROUP BY s.remakedepartment, s.managername) "ts" ON upper(p.remakedepartment::text) = "ts".remakedepartment
+   JOIN ( SELECT r.remakedepartment, sum(r.quantity) AS totalqty, r.managername
+              FROM ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                      FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                              FROM fct."order" o
+                         JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                        WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                 JOIN ( SELECT DISTINCT ccp.orderid, upper(p.remakedepartment::text) AS remakedepartment, ccp.quantity, rdm.managername
+                              FROM ( SELECT DISTINCT o.orderid, o.remakeof, o.ordertypeid, o.dateinvoicedlocaldts, oi.productionfacility, oi.productid, oi.quantity, oi.remakeid, COALESCE(oi.reasonid, o.reasonid) AS reasonid, oi.isforsurcharge
+                                      FROM fct."order" o
+                                 JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                                WHERE o.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval)) ccp
+                         JOIN dim.products p ON ccp.productid::text = p.productid::text
+                    JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                                 FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                                         FROM dim.products p
+                                    JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                                 FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                              UNION 
+                                                       SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                              UNION 
+                                                       SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+                   WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '30 days'::interval) AND ccp.remakeid IS NULL AND p.remakecategory::text > ''::text AND ccp.ordertypeid = 0 AND ccp.productionfacility::text = '10-GDL'::text) su ON ccp.remakeof = su.orderid
+            JOIN dim.products p ON ccp.productid::text = p.productid::text
+       JOIN ( SELECT pm.remakedepartment, pm.remakedepartmentmanager AS managername
+                    FROM ( SELECT DISTINCT upper(ltrim(rtrim(p.remakedepartment::text))) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                            FROM dim.products p
+                       JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                                    FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                                 UNION 
+                                          SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                                 UNION 
+                                          SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) pm) rdm ON upper(p.remakedepartment::text) = rdm.remakedepartment
+      WHERE ccp.dateinvoicedlocaldts >= ('now'::text::date - '90 days'::interval) AND ccp.dateinvoicedlocaldts <= ('now'::text::date - '1 day'::interval) AND p.remakecategory::text > ''::text AND (ccp.remakeid::text > ''::text AND ccp.ordertypeid = 0 OR ccp.ordertypeid = 1 AND ccp.isforsurcharge::text = 1::text) AND ccp.productionfacility::text = '10-GDL'::text) r
+             GROUP BY r.remakedepartment, r.managername) tr ON upper(p.remakedepartment::text) = tr.remakedepartment
+  GROUP BY upper(p.remakedepartment::text), "ts".managername, "ts".totalqty, tr.totalqty) rr
+  ORDER BY rr.returnrate DESC;
+
+COMMIT;

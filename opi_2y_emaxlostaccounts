@@ -1,0 +1,24 @@
+CREATE OR REPLACE VIEW tableau.opi_2y_emaxlostaccounts
+(
+  accountid,
+  istestaccount,
+  orderid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  pf_productline,
+  pf_producttype,
+  netsales
+)
+AS 
+ SELECT a.accountid, b.istestaccount, a.orderid, a.dateinlocaldts, a.dateinvoicedlocaldts, a.pf_productline, a.pf_producttype, c.totalcharge - c.totaltax AS netsales
+   FROM cal.accountstatusdetails a
+   JOIN dim.accounts b ON a.accountid::text = b.accountid::text
+   JOIN fct."order" c ON a.orderid::text = c.orderid::text
+  WHERE a.pf_productline::text = 'emax'::text AND a.productlinelast::text = 1::text AND a.dateinlocaldts::text > (1 / 1 / 2014)::text;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opi_2y_emaxlostaccounts TO cloudbeam;
+GRANT SELECT ON tableau.opi_2y_emaxlostaccounts TO operations;
+
+
+COMMIT;

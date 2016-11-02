@@ -1,0 +1,65 @@
+CREATE OR REPLACE VIEW tableau.opx_6m_locationhistory
+(
+  orderid,
+  ordertypeid,
+  ordertype,
+  processlabellocationid,
+  lastlocation,
+  locationfacilityid,
+  locationbuilding,
+  locationdepartment,
+  locationzone,
+  locationprocess,
+  locationprocessdescription,
+  locationcheckindate,
+  locationcheckoutdate,
+  assignmentcount,
+  firstassignedto,
+  firstassignedtocart,
+  firstassignmentstartdate,
+  firstassignmentcompleteddate,
+  lastassignedto,
+  lastassignedtocart,
+  lastassignmentstartdate,
+  lastassignmentcompleteddate,
+  invoiced,
+  datein,
+  dateinvoiced,
+  doctorduedate,
+  quantity,
+  locationgroup,
+  productline,
+  productdepartment,
+  originlocationfacilityid,
+  daysremaininggroup,
+  productgroup,
+  isbridge,
+  isanterior,
+  locationprocesscount
+)
+AS 
+ SELECT cl.orderid, cl.ordertypeid, cl.ordertype, cl.processlabellocationid, cl.lastlocation, cl.locationfacilityid, cl.locationbuilding, cl.locationdepartment, cl.locationzone, cl.locationprocess, cl.locationprocessdescription, cl.locationcheckindate, cl.locationcheckoutdate, cl.assignmentcount, cl.firstassignedto, cl.firstassignedtocart, cl.firstassignmentstartdate, cl.firstassignmentcompleteddate, cl.lastassignedto, cl.lastassignedtocart, cl.lastassignmentstartdate, cl.lastassignmentcompleteddate, cl.invoiced, cl.datein, cl.dateinvoiced, cl.duedate AS doctorduedate, cl.quantity, cl.locationgroup, cl.productline, cl.productdepartment, cl.originlocationfacilityid, cl.daysremaininggroup, p.pf_productgroup AS productgroup, cl.isbridge, cl.isanterior, 
+        CASE
+            WHEN z.maxcount = 1 THEN (z.maxcount::character varying(3)::text + ' Time'::character varying::text)::character varying
+            WHEN z.maxcount > 1 THEN (z.maxcount::character varying(3)::text + ' Times'::character varying::text)::character varying
+            ELSE NULL::character varying
+        END AS locationprocesscount
+   FROM cal.caselocation cl
+   LEFT JOIN dim.products p ON cl.productid::text = p.productid::text
+   LEFT JOIN ( SELECT DISTINCT x.orderid, x.locationprocess, "max"(x.rownum) AS maxcount, "max"(x.caselocationsequenceid) AS caselocationsequenceid
+      FROM ( SELECT cl.orderid, cl.locationprocess, cl.locationcheckindate, pg_catalog.row_number()
+             OVER( 
+             PARTITION BY cl.orderid, cl.locationprocess
+             ORDER BY cl.locationcheckindate) AS rownum, cl.caselocationsequenceid
+              FROM cal.caselocation cl
+             WHERE cl.datein >= date_add('month'::character varying::text, - 6::bigint, date_trunc('day'::character varying::text, 'now'::character varying::date::timestamp without time zone))) x
+     GROUP BY x.orderid, x.locationprocess) z ON cl.orderid = z.orderid AND cl.locationprocess::text = z.locationprocess::text AND cl.caselocationsequenceid = z.caselocationsequenceid
+  WHERE cl.datein >= date_add('month'::character varying::text, - 6::bigint, date_trunc('day'::character varying::text, 'now'::character varying::date::timestamp without time zone));
+
+
+GRANT SELECT ON tableau.opx_6m_locationhistory TO operations;
+GRANT TRIGGER, RULE, UPDATE, INSERT, REFERENCES, SELECT, DELETE ON tableau.opx_6m_locationhistory TO bidevelopers;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_6m_locationhistory TO cloudbeam;
+
+
+COMMIT;

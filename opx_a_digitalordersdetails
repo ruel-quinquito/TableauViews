@@ -1,0 +1,45 @@
+CREATE OR REPLACE VIEW tableau.opx_a_digitalordersdetails
+(
+  orderid,
+  ordertypeid,
+  ordertype,
+  doctorid,
+  customertypeid,
+  customercategory,
+  datein,
+  dateinvoiced,
+  postdatelocaldts,
+  sourcesystem,
+  sourcesystemscanner,
+  productid,
+  pf_productline,
+  pf_departmentid,
+  pf_isactualunit,
+  quantity,
+  originfacility,
+  enteredby,
+  salescategory,
+  nomodel,
+  totalcharge,
+  totaltax,
+  isbridge,
+  isanterior
+)
+AS 
+ SELECT o.orderid, o.ordertypeid, o.ordertype, o.doctorid, d.customertypeid, d.customercategory, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts AS dateinvoiced, o.postdatelocaldts, o1.sourcesystem, o1.sourcesystemscanner, oi.productid, p.pf_productline, p.pf_departmentid, p.pf_isactualunit, oi.quantity, o.originfacility, o.enteredby, p.salescategory, p.nomodel, oi.totalcharge, oi.totaltax, oi.isbridge, co.isanterior
+   FROM fct."order" o
+   JOIN dim.doctors d ON upper(o.doctorid::text) = upper(d.doctorid::text) AND d.istestdoctor::text = 0::character varying::text
+   JOIN cal."order" o1 ON o.orderid = o1.orderid AND o1.sourcesystem IS NOT NULL
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid
+   JOIN dim.products p ON upper(p.productid::text) = upper(oi.productid::text) AND p.pf_departmentid::text <> 'LOGISTICS'::character varying::text
+   LEFT JOIN cal.orderitem co ON co.orderid = oi.orderid AND co.orderproductid = oi.orderproductid
+  WHERE o.ordertypeid = 0 AND o.dateinlocaldts >= date_add('year'::character varying::text, - 2::bigint, date_trunc('year'::character varying::text, 'now'::character varying::date::timestamp without time zone));
+
+
+GRANT SELECT ON tableau.opx_a_digitalordersdetails TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_digitalordersdetails TO _lucy;
+GRANT SELECT ON tableau.opx_a_digitalordersdetails TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_digitalordersdetails TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,62 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountstatusdetails
+(
+  masteraccountid,
+  accountseqid,
+  masteraccountoriginfacilityid,
+  accountid,
+  orderid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  orderproductid,
+  productid,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  pf_departmentid,
+  originfacilityid,
+  productionfacilityid,
+  productseqid,
+  productgroupseqid,
+  productlineseqid,
+  producttypeseqid,
+  departmentseqid,
+  labseqid,
+  labfirst,
+  labrestart,
+  labrestartseqid,
+  lablastinvoiced,
+  lablast,
+  departmentfirst,
+  departmentrestart,
+  departmentrestartseqid,
+  departmentlastinvoiced,
+  departmentlast,
+  producttypefirst,
+  producttyperestart,
+  producttyperestartseqid,
+  producttypelastinvoiced,
+  producttypelast,
+  productlinefirst,
+  productlinerestart,
+  productlinerestartseqid,
+  productlinelastinvoiced,
+  productlinelast,
+  productgroupfirst,
+  productgrouprestart,
+  productgrouprestartseqid,
+  productgrouplastinvoiced,
+  productgrouplast
+)
+AS 
+ SELECT accountstatusdetails.masteraccountid, accountstatusdetails.accountseqid, accountstatusdetails.masteraccountoriginfacilityid, accountstatusdetails.accountid, accountstatusdetails.orderid, accountstatusdetails.dateinlocaldts, accountstatusdetails.dateinvoicedlocaldts, accountstatusdetails.orderproductid, accountstatusdetails.productid, accountstatusdetails.pf_productgroup, accountstatusdetails.pf_productline, accountstatusdetails.pf_producttype, accountstatusdetails.pf_departmentid, accountstatusdetails.originfacilityid, accountstatusdetails.productionfacilityid, accountstatusdetails.productseqid, accountstatusdetails.productgroupseqid, accountstatusdetails.productlineseqid, accountstatusdetails.producttypeseqid, accountstatusdetails.departmentseqid, accountstatusdetails.labseqid, accountstatusdetails.labfirst, accountstatusdetails.labrestart, accountstatusdetails.labrestartseqid, accountstatusdetails.lablastinvoiced, accountstatusdetails.lablast, accountstatusdetails.departmentfirst, accountstatusdetails.departmentrestart, accountstatusdetails.departmentrestartseqid, accountstatusdetails.departmentlastinvoiced, accountstatusdetails.departmentlast, accountstatusdetails.producttypefirst, accountstatusdetails.producttyperestart, accountstatusdetails.producttyperestartseqid, accountstatusdetails.producttypelastinvoiced, accountstatusdetails.producttypelast, accountstatusdetails.productlinefirst, accountstatusdetails.productlinerestart, accountstatusdetails.productlinerestartseqid, accountstatusdetails.productlinelastinvoiced, accountstatusdetails.productlinelast, accountstatusdetails.productgroupfirst, accountstatusdetails.productgrouprestart, accountstatusdetails.productgrouprestartseqid, accountstatusdetails.productgrouplastinvoiced, accountstatusdetails.productgrouplast
+   FROM cal.accountstatusdetails;
+
+
+GRANT SELECT ON tableau.opx_a_accountstatusdetails TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_accountstatusdetails TO executive;
+GRANT SELECT ON tableau.opx_a_accountstatusdetails TO _lucy;
+GRANT SELECT ON tableau.opx_a_accountstatusdetails TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_accountstatusdetails TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,115 @@
+CREATE OR REPLACE VIEW tableau.opx_a_360view_dev
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  orderid,
+  orderproductid,
+  orderitempartid,
+  parttoothstr,
+  parttoothmask,
+  partquantity,
+  parttotalcharge,
+  parttotaltax,
+  toothlocation,
+  toothtype,
+  shade,
+  productid,
+  transactiontype,
+  doctorid,
+  patientname,
+  dateindtslocal,
+  dateinvoiceddtslocal,
+  originfacilityid,
+  productionfacilityid,
+  pf_departmentid,
+  pf_isactualunit,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  sourcesystem,
+  sourcesystemscanner,
+  scansystem,
+  designsystem,
+  millsystem,
+  blocksize,
+  blockcolor,
+  gotreturned,
+  returntype,
+  returnorderid,
+  returnorderproductid,
+  returnorderitempartid,
+  returnorderdateindtslocal,
+  returnorderdateinvoiceddtslocal,
+  returnparttoothstr,
+  returnparttoothmask,
+  returnproductid,
+  returntoothlocation,
+  returntoothtype,
+  returnremakeid,
+  returnorderremakereason,
+  returnorderremakereasoncategory,
+  returnitemremakereason,
+  returnitemremakereasoncategory,
+  returnquantity,
+  daysbeforereturn,
+  totalreturncount,
+  delaycount,
+  delaytimeinminutes,
+  inboundcarriername,
+  inboundtrackingnumber,
+  inboundturnaroundtimeindays,
+  orderentryturnaroundtimeinhours,
+  outboundcarriername,
+  outboundtrackingnumber,
+  outboundturnaroundtimeindays,
+  doctorgroupid,
+  practicename,
+  totalmillcount,
+  totalmillunits,
+  totalmillminutes,
+  totaldesigncount,
+  totaldesignunits,
+  totaldesignminutes,
+  totalscancount,
+  totalscanminutes,
+  totalscanunits,
+  blockheight,
+  blockmaterial,
+  scannermake,
+  scannermodel,
+  milllocationname,
+  designlocationid,
+  designlocationname,
+  scanlocationid,
+  scanlocationname,
+  millendlocaldts,
+  designendlocaldts,
+  scanendlocaldts,
+  scanmachineserial,
+  inhousesale,
+  blockserialnumber,
+  millmachineserial,
+  remillreason,
+  totalremillunits,
+  returnordershade,
+  isautoproposal
+)
+AS 
+ SELECT ap1.recordinsertedlocaldts, ap1.recordmodifiedlocaldts, ap1.orderid, ap1.orderproductid, ap1.orderitempartid, ap1.parttoothstr, ap1.parttoothmask, ap1.partquantity, ap1.parttotalcharge, ap1.parttotaltax, ap1.toothlocation, ap1.toothtype, ap1.shade, ap1.productid, ap1.transactiontype, ap1.doctorid, ap1.patientname, ap1.dateindtslocal, ap1.dateinvoiceddtslocal, ap1.originfacilityid, ap1.productionfacilityid, ap1.pf_departmentid, ap1.pf_isactualunit, ap1.pf_productgroup, ap1.pf_productline, ap1.pf_producttype, ap1.sourcesystem, ap1.sourcesystemscanner, ap1.scansystem, ap1.designsystem, ap1.millsystem, ap1.blocksize, ap1.blockcolor, ap1.gotreturned, ap1.returntype, ap1.returnorderid, ap1.returnorderproductid, ap1.returnorderitempartid, ap1.returnorderdateindtslocal, ap1.returnorderdateinvoiceddtslocal, ap1.returnparttoothstr, ap1.returnparttoothmask, ap1.returnproductid, ap1.returntoothlocation, ap1.returntoothtype, ap1.returnremakeid, ap1.returnorderremakereason, ap1.returnorderremakereasoncategory, ap1.returnitemremakereason, ap1.returnitemremakereasoncategory, ap1.returnquantity, ap1.daysbeforereturn, ap1.totalreturncount, ap1.delaycount, ap1.delaytimeinminutes, ap1.inboundcarriername, ap1.inboundtrackingnumber, ap1.inboundturnaroundtimeindays, ap1.orderentryturnaroundtimeinhours, ap1.outboundcarriername, ap1.outboundtrackingnumber, ap1.outboundturnaroundtimeindays, ap1.doctorgroupid, ap1.practicename, ap1.totalmillcount, ap1.totalmillunits, ap1.totalmillminutes, ap1.totaldesigncount, ap1.totaldesignunits, ap1.totaldesignminutes, ap1.totalscancount, ap1.totalscanminutes, ap1.totalscanunits, ap1.blockheight, ap1.blockmaterial, ap1.scannermake, ap1.scannermodel, ap1.milllocationname, ap1.designlocationid, ap1.designlocationname, ap1.scanlocationid, ap1.scanlocationname, ap1.millendlocaldts, ap1.designendlocaldts, ap1.scanendlocaldts, ap1.scanmachineserial, ap1.inhousesale, ap1.blockserialnumber, ap1.millmachineserial, ap1.remillreason, ap1.totalremillunits, ap2.shade AS returnordershade, COALESCE(ap.isautoproposal, 0) AS isautoproposal
+   FROM agg.order360infobypart ap1
+   LEFT JOIN ( SELECT DISTINCT order360infobypart.orderid, order360infobypart.orderproductid, order360infobypart.orderitempartid, order360infobypart.shade
+           FROM agg.order360infobypart) ap2 ON ap1.returnorderid = ap2.orderid AND ap1.returnorderproductid = ap2.orderproductid AND ap1.returnorderitempartid = ap2.orderitempartid
+   LEFT JOIN ( SELECT DISTINCT fct_cadmessages_notifications.orderidoriginator, 1 AS isautoproposal
+      FROM cp.fct_cadmessages_notifications
+     WHERE fct_cadmessages_notifications.subjectname::text = 'CAD-AutoProposal'::character varying::text) ap ON ap1.orderid::character varying::text = ap.orderidoriginator::text
+  WHERE ap1.pf_isactualunit::text = 1::character varying::text AND ap1.dateinvoiceddtslocal >= '2015-11-01 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_a_360view_dev TO _lucy;
+GRANT SELECT ON tableau.opx_a_360view_dev TO _katie;
+GRANT SELECT ON tableau.opx_a_360view_dev TO _katiet;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_360view_dev TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_360view_dev TO _ops;
+
+
+COMMIT;

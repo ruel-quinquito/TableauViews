@@ -1,0 +1,63 @@
+CREATE OR REPLACE VIEW tableau.opx_1y_accountstatussummary
+(
+  reportdate,
+  originfacilityid,
+  groupby,
+  groupbyname,
+  statusgroup,
+  currentaccounts,
+  previousaccounts,
+  currentytdaccounts,
+  previousytdaccounts,
+  currentweekstartdate,
+  currentweekenddate,
+  previousweekstartdate,
+  previousweekenddate
+)
+AS 
+ SELECT x.reportdate, x.originfacilityid, x.groupby, x.groupbyname, x.statusgroup, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN COALESCE(cw.weektodateactive, 0)
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN COALESCE(cw.weektodatenew, 0)
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN COALESCE(cw.weektodaterestart, 0)
+            ELSE NULL::integer
+        END AS currentaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN COALESCE(pw.weektodateactive, 0)
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN COALESCE(pw.weektodatenew, 0)
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN COALESCE(pw.weektodaterestart, 0)
+            ELSE NULL::integer
+        END AS previousaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN COALESCE(cw.yeartodateactive, 0)
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN COALESCE(cw.yeartodatenew, 0)
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN COALESCE(cw.yeartodaterestart, 0)
+            ELSE NULL::integer
+        END AS currentytdaccounts, 
+        CASE
+            WHEN x.statusgroup::text = 'Active Customers'::character varying::text THEN COALESCE(pw.yeartodateactive, 0)
+            WHEN x.statusgroup::text = 'New Customers'::character varying::text THEN COALESCE(pw.yeartodatenew, 0)
+            WHEN x.statusgroup::text = 'Restart Customers'::character varying::text THEN COALESCE(pw.yeartodaterestart, 0)
+            ELSE NULL::integer
+        END AS previousytdaccounts, cw.weekstartdate AS currentweekstartdate, cw.weekenddate AS currentweekenddate, pw.weekstartdate AS previousweekstartdate, pw.weekenddate AS previousweekenddate
+   FROM ( SELECT DISTINCT a.reportdate, a.originfacilityid, a.groupby, c.groupbyname, b.statusgroup
+           FROM sum.accountstatussummary a
+      LEFT JOIN sum.weeklyaccountsummary b ON a.originfacilityid = b.facilityid
+   LEFT JOIN ( SELECT DISTINCT accountstatussummary.groupby, accountstatussummary.groupbyname
+              FROM sum.accountstatussummary) c ON a.groupby::text = c.groupby::text) x
+   LEFT JOIN ( SELECT DISTINCT unitsin_reportdata.currentdate, unitsin_reportdata.previousdate, date_diff('day'::character varying::text, unitsin_reportdata.currentdate, unitsin_reportdata.previousdate) AS datedifferential
+           FROM sum.unitsin_reportdata) y ON x.reportdate IS NOT NULL AND y.currentdate IS NOT NULL
+   LEFT JOIN ( SELECT accountstatussummary.reportdate, accountstatussummary.originfacilityid, accountstatussummary.groupby, accountstatussummary.groupbyname, accountstatussummary.weektodateactive, accountstatussummary.weektodatenew, accountstatussummary.weektodaterestart, accountstatussummary.yeartodateactive, accountstatussummary.yeartodatenew, accountstatussummary.yeartodaterestart, accountstatussummary.weekstartdate, accountstatussummary.weekenddate
+      FROM sum.accountstatussummary
+     WHERE "date_part"('year'::character varying::text, accountstatussummary.reportdate) = "date_part"('year'::character varying::text, 'now'::character varying::date)) cw ON x.reportdate = cw.reportdate AND x.originfacilityid = cw.originfacilityid AND x.groupby::text = cw.groupby::text AND x.groupbyname::text = cw.groupbyname::text
+   LEFT JOIN ( SELECT accountstatussummary.reportdate, accountstatussummary.originfacilityid, accountstatussummary.groupby, accountstatussummary.groupbyname, accountstatussummary.weektodateactive, accountstatussummary.weektodatenew, accountstatussummary.weektodaterestart, accountstatussummary.yeartodateactive, accountstatussummary.yeartodatenew, accountstatussummary.yeartodaterestart, accountstatussummary.weekstartdate, accountstatussummary.weekenddate
+   FROM sum.accountstatussummary
+  WHERE "date_part"('year'::character varying::text, accountstatussummary.reportdate) = ("date_part"('year'::character varying::text, 'now'::character varying::date) - 1)) pw ON pw.reportdate = date_add('day'::character varying::text, y.datedifferential, x.reportdate) AND x.originfacilityid = pw.originfacilityid AND x.groupby::text = pw.groupby::text AND x.groupbyname::text = pw.groupbyname::text;
+
+
+GRANT SELECT ON tableau.opx_1y_accountstatussummary TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_1y_accountstatussummary TO cloudbeam;
+GRANT SELECT ON tableau.opx_1y_accountstatussummary TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,128 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadautoproposalsummary
+(
+  autoproposal,
+  orderid,
+  ordertypeid,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  toothnumber,
+  groupid,
+  groupname,
+  hostname,
+  operatorid,
+  begintime,
+  endtime,
+  totaldurationseconds,
+  rejectcount,
+  scancount,
+  scandurationseconds,
+  designcount,
+  designdurationseconds,
+  overallcaseevaluation,
+  fastdesign,
+  "3shape",
+  automatedmilling,
+  manualmilling
+)
+AS 
+ SELECT x.autoproposal, x.orderid, x.ordertypeid, x.doctorid, x.dateinlocaldts, x.dateinvoicedlocaldts, x.toothnumber, x.groupid, x.groupname, x.hostname, x.operatorid, x.begintime, x.endtime, x.totaldurationseconds, x.rejectcount, x.scancount, x.scandurationseconds, x.designcount, x.designdurationseconds, x.overallcaseevaluation, x.fastdesign, x."3shape", x.automatedmilling, x.manualmilling
+   FROM ( SELECT s.autoproposal, s.orderid, s.ordertypeid, s.doctorid, s.dateinlocaldts, s.dateinvoicedlocaldts, s.toothnumber::character varying(255) AS toothnumber, s.groupid, s.groupname, s.hostname, s.operatorid, s.begintime, s.endtime, s.totaldurationseconds, (( SELECT COALESCE(count(1), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadreject r
+                  WHERE r.orderid::text = s.orderid::text AND r.toothnumber::text = s.toothnumber::text AND r.groupid::text = s.groupid::text AND r.operatorid::text = s.operatorid::text AND r.endtime = s.endtime))::integer AS rejectcount, (( SELECT COALESCE(count(sc.seqid), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Scan'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime))::integer AS scancount, (( SELECT COALESCE(sum(sc.durationseconds::numeric), 0::numeric) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Scan'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime))::integer AS scandurationseconds, (( SELECT COALESCE(count(sc.seqid), 0::bigint) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Design'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime))::integer AS designcount, (( SELECT COALESCE(sum(sc.durationseconds::numeric), 0::numeric) AS "coalesce"
+                   FROM tableau.opx_a_cadworkflowstep sc
+                  WHERE sc.workflowstep::text = 'Design'::text AND sc.orderid::text = s.orderid::text AND sc.toothnumber::text = s.toothnumber::text AND sc.groupid::text = s.groupid::text AND sc.operatorid::text = s.operatorid::text AND sc.endtime >= s.begintime AND sc.endtime <= s.endtime))::integer AS designdurationseconds, ev.evalanswer AS overallcaseevaluation, 
+                CASE
+                    WHEN COALESCE(fdx.fdcount, 0::bigint) > 0 THEN 1
+                    ELSE 0
+                END AS fastdesign, 
+                CASE
+                    WHEN sss.orderid IS NOT NULL AND (sss.firstscan >= s.dateinlocaldts AND sss.firstscan <= s.dateinvoicedlocaldts OR sss.lastscan >= s.dateinlocaldts AND sss.lastscan <= s.dateinvoicedlocaldts) THEN 1
+                    ELSE 0
+                END AS "3shape", 
+                CASE
+                    WHEN am.orderid IS NOT NULL AND (am.firstmill >= s.dateinlocaldts AND am.firstmill <= s.dateinvoicedlocaldts OR am.lastmill >= s.dateinlocaldts AND am.lastmill <= s.dateinvoicedlocaldts) THEN 1
+                    ELSE 0
+                END AS automatedmilling, 
+                CASE
+                    WHEN "mm".orderid IS NOT NULL AND ("mm".firstmill >= s.dateinlocaldts AND "mm".firstmill <= s.dateinvoicedlocaldts OR "mm".lastmill >= s.dateinlocaldts AND "mm".lastmill <= s.dateinvoicedlocaldts) THEN 1
+                    ELSE 0
+                END AS manualmilling
+           FROM tableau.opx_a_cadmessagesummary s
+      LEFT JOIN ( SELECT caseevaluationsurvey.evalorderid::character varying AS orderid, caseevaluationsurvey.evalanswer
+                   FROM fct.caseevaluationsurvey
+                  WHERE caseevaluationsurvey.evalquestion::text = 'Overall Case'::text) ev ON ev.orderid::text = s.orderid::text
+   LEFT JOIN ( SELECT x.orderid, x.toothnumber, count(1) AS fdcount
+              FROM ( SELECT 
+                           CASE
+                               WHEN fd.endevent::text = 'Scan/Complete'::text THEN 'Scan'::text
+                               ELSE 'Design'::text
+                           END AS workflowstep, fd.caseid::character varying AS orderid, fd.tooth AS toothnumber, "left"(fd.enddtslocal::text, 16)::timestamp without time zone AS endtime
+                      FROM fct.centralizeddesigns fd
+                 JOIN tableau.opx_a_cadmessagesummary ms ON ms.orderid::text = fd.caseid::character varying::text AND ms.toothnumber::text = fd.tooth::text AND ms.autoproposal = 1
+                WHERE fd.enddtslocal > '2015-11-01 00:00:00'::timestamp without time zone AND (fd.endevent::text = 'Scan/Complete'::text OR fd.endevent::text = 'Design/Complete'::text)) x
+         LEFT JOIN tableau.opx_a_cadworkflowstep wfs ON wfs.orderid::text = x.orderid::text AND wfs.toothnumber::text = x.toothnumber::text AND wfs.workflowstep::text = x.workflowstep AND "left"(wfs.endtime::text, 16)::timestamp without time zone = x.endtime
+        WHERE wfs.orderid IS NULL
+        GROUP BY x.orderid, x.toothnumber) fdx ON fdx.orderid::text = s.orderid::text AND ltrim(rtrim(fdx.toothnumber::text)) = ltrim(rtrim(s.toothnumber::text))
+   LEFT JOIN ( SELECT s.orderid::character varying AS orderid, si.toothnumber, min(s.scanendlocaldts) AS firstscan, "max"(s.scanendlocaldts) AS lastscan, count(1) AS scancount
+         FROM fct.scan s
+    JOIN fct.scanitem si ON si.scanid::text = s.scanid::text
+   WHERE s.orderid > 0 AND s.scancreatedlocaldts > '2015-11-01 00:00:00'::timestamp without time zone AND s.applicationname::text = '3Shape'::text
+   GROUP BY s.orderid, si.toothnumber) sss ON sss.orderid::text = s.orderid::text AND ltrim(rtrim(sss.toothnumber::text)) = ltrim(rtrim(s.toothnumber::text))
+   LEFT JOIN ( SELECT centralizedmilling.orderid::character varying AS orderid, centralizedmilling.toothstr AS toothnumber, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+    FROM fct.centralizedmilling
+   WHERE centralizedmilling.isautopilot::text = 1::text AND centralizedmilling.locationenddate > '2015-11-01 00:00:00'::timestamp without time zone AND centralizedmilling.millingjobstatus::text = 'Job Completed'::text
+   GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) am ON am.orderid::text = s.orderid::text AND ltrim(rtrim(am.toothnumber::text)) = ltrim(rtrim(s.toothnumber::text))
+   LEFT JOIN ( SELECT centralizedmilling.orderid::character varying AS orderid, centralizedmilling.toothstr AS toothnumber, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+   FROM fct.centralizedmilling
+  WHERE (centralizedmilling.isautopilot::text = 0::text OR centralizedmilling.isautopilot IS NULL) AND centralizedmilling.locationenddate > '2015-11-01 00:00:00'::timestamp without time zone AND centralizedmilling.millingjobstatus::text = 'Job Completed'::text
+  GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) "mm" ON "mm".orderid::text = s.orderid::text AND ltrim(rtrim("mm".toothnumber::text)) = ltrim(rtrim(s.toothnumber::text))
+  WHERE s.autoproposal = 1 AND s.ordertypeid IS NOT NULL) x
+  WHERE (x.scancount + x.designcount) > 0
+UNION 
+ SELECT 0 AS autoproposal, s.caseid::character varying(255) AS orderid, d.ordertypeid, d.doctorid, d.dateinlocaldts, d.dateinvoicedlocaldts, d.toothnumber::character varying(65535) AS toothnumber, 0::character varying(255) AS groupid, 'Fixed'::character varying::character varying(255) AS groupname, 'Various'::character varying::character varying(255) AS hostname, "replace"("replace"("replace"("replace"(lower(s.designtech::text), 'design'::text, ''::text), 'scan'::text, ''::text), 'auto'::text, ''::text), '@glidewelldental.com'::text, ''::text)::character varying(255) AS operatorid, d.begintime, d.endtime, date_diff('second'::text, d.begintime, d.endtime)::integer AS totaldurationseconds, d.rejectcount::integer AS rejectcount, s.scancount, s.scantimeinseconds AS scandurationseconds, s.designcount::bigint AS designcount, s.designtimeinseconds AS designdurationseconds, ev.evalanswer::character varying(300) AS overallcaseevaluation, 1 AS fastdesign, 0 AS "3shape", 
+        CASE
+            WHEN am.orderid IS NOT NULL AND (am.firstmill >= d.dateinlocaldts AND am.firstmill <= d.dateinvoicedlocaldts OR am.lastmill >= d.dateinlocaldts AND am.lastmill <= d.dateinvoicedlocaldts) THEN 1
+            ELSE 0
+        END AS automatedmilling, 
+        CASE
+            WHEN "mm".orderid IS NOT NULL AND ("mm".firstmill >= d.dateinlocaldts AND "mm".firstmill <= d.dateinvoicedlocaldts OR "mm".lastmill >= d.dateinlocaldts AND "mm".lastmill <= d.dateinvoicedlocaldts) THEN 1
+            ELSE 0
+        END AS manualmilling
+   FROM tableau.opx_a_centralizeddesignssummary s
+   JOIN ( SELECT x.orderid, x.toothnumber, x.begintime, x.endtime, x.totaldurationinseconds, x.rejectcount, o.dateinlocaldts, o.dateinvoicedlocaldts, o.doctorid, o.ordertypeid
+           FROM ( SELECT f.caseid AS orderid, f.tooth AS toothnumber, min(f.begindtslocal) AS begintime, "max"(f.enddtslocal) AS endtime, date_diff('second'::text, min(f.begindtslocal), "max"(f.enddtslocal)) AS totaldurationinseconds, sum(COALESCE(f.reject, 0)) AS rejectcount
+                   FROM fct.centralizeddesigns f
+              LEFT JOIN tableau.opx_a_cadmessagesummary c ON c.orderid::text = f.caseid::text AND c.autoproposal = 1
+             WHERE f.locationname::text = 'Fixed'::text AND (f.material::text = 'BRUXZIR'::text OR f.material::text = 'BRUXZIRANT'::text) AND c.orderid IS NULL
+             GROUP BY f.caseid, f.tooth) x
+      JOIN fct."order" o ON o.orderid = x.orderid AND o.ordertypeid = 0
+     WHERE x.endtime >= '2015-11-01 00:00:00'::timestamp without time zone) d ON d.orderid = s.caseid
+   LEFT JOIN tableau.opx_a_cadmessagesummary cad ON cad.orderid::text = s.caseid::text
+   LEFT JOIN ( SELECT caseevaluationsurvey.evalorderid::character varying AS orderid, caseevaluationsurvey.evalanswer
+   FROM fct.caseevaluationsurvey
+  WHERE caseevaluationsurvey.evalquestion::text = 'Overall Case'::text) ev ON ev.orderid::text = s.caseid::text
+   LEFT JOIN ( SELECT centralizedmilling.orderid::character varying AS orderid, centralizedmilling.toothstr AS toothnumber, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+   FROM fct.centralizedmilling
+  WHERE centralizedmilling.isautopilot::text = 1::text AND centralizedmilling.locationenddate > '2015-11-01 00:00:00'::timestamp without time zone AND centralizedmilling.millingjobstatus::text = 'Job Completed'::text
+  GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) am ON am.orderid::text = s.caseid::text AND ltrim(rtrim(am.toothnumber::text)) = ltrim(rtrim(d.toothnumber::text))
+   LEFT JOIN ( SELECT centralizedmilling.orderid::character varying AS orderid, centralizedmilling.toothstr AS toothnumber, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+   FROM fct.centralizedmilling
+  WHERE (centralizedmilling.isautopilot::text = 0::text OR centralizedmilling.isautopilot IS NULL) AND centralizedmilling.locationenddate > '2015-11-01 00:00:00'::timestamp without time zone AND centralizedmilling.millingjobstatus::text = 'Job Completed'::text
+  GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) "mm" ON "mm".orderid::text = s.caseid::text AND ltrim(rtrim("mm".toothnumber::text)) = ltrim(rtrim(d.toothnumber::text))
+  WHERE (s.scancount::bigint + s.designcount::bigint) > 0;
+
+
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary TO _etl;
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary TO operations;
+GRANT SELECT ON tableau.opx_a_cadautoproposalsummary TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadautoproposalsummary TO cloudbeam;
+
+
+COMMIT;

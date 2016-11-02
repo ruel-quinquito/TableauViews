@@ -1,0 +1,25 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadmessagetoothnumber
+(
+  messageid,
+  orderid,
+  toothnumber,
+  units
+)
+AS 
+ SELECT t.messageid, t.orderid, pg_catalog.listagg(t.toothnumber::text, ','::character varying::text) WITHIN GROUP(
+  ORDER BY t.toothnumber) AS toothnumber, count(t.toothnumber) AS units
+   FROM ( SELECT DISTINCT fct_cadmessages_notifications.messageid, fct_cadmessages_notifications.orderidoriginator AS orderid, fct_cadmessages_notifications.toothnumber
+           FROM cp.fct_cadmessages_notifications
+          WHERE fct_cadmessages_notifications.groupid::text = '154'::text OR fct_cadmessages_notifications.groupid::text = '336'::text) t
+  GROUP BY t.messageid, t.orderid;
+
+
+GRANT SELECT ON tableau.opx_a_cadmessagetoothnumber TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_cadmessagetoothnumber TO _etl;
+GRANT SELECT ON tableau.opx_a_cadmessagetoothnumber TO _lucy;
+GRANT SELECT ON tableau.opx_a_cadmessagetoothnumber TO operations;
+GRANT SELECT ON tableau.opx_a_cadmessagetoothnumber TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadmessagetoothnumber TO cloudbeam;
+
+
+COMMIT;

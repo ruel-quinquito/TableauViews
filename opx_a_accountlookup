@@ -1,0 +1,26 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountlookup
+(
+  accountid,
+  dateinvoiced,
+  originfacilityid,
+  pf_departmentid,
+  pf_producttype,
+  pf_productline,
+  pf_productgroup,
+  labfirst,
+  departmentfirst,
+  producttypefirst,
+  productlinefirst,
+  productgroupfirst,
+  labrestart,
+  departmentrestart,
+  producttyperestart,
+  productlinerestart,
+  productgrouprestart
+)
+AS 
+ SELECT a.accountid, date_trunc('month'::text, a.dateinvoicedlocaldts) AS dateinvoiced, a.originfacilityid, a.pf_departmentid, a.pf_producttype, a.pf_productline, a.pf_productgroup, a.labfirst, a.departmentfirst, a.producttypefirst, a.productlinefirst, a.productgroupfirst, a.labrestart, a.departmentrestart, a.producttyperestart, a.productlinerestart, a.productgrouprestart
+   FROM cal.accountstatusdetails a
+  WHERE a.labfirst::text = 1::text OR a.departmentfirst::text = 1::text OR a.producttypefirst::text = 1::text OR a.productlinefirst::text = 1::text OR a.productgroupfirst::text = 1::text OR a.labrestart::text = 1::text OR a.departmentrestart::text = 1::text OR a.producttyperestart::text = 1::text OR a.productlinerestart::text = 1::text OR a.productgrouprestart::text = 1::text;
+
+COMMIT;

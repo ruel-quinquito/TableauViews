@@ -1,0 +1,36 @@
+CREATE OR REPLACE VIEW tableau.sli_6months_prkcontractsales
+(
+  accountname,
+  createdate,
+  doctorid,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  productid,
+  pf_quantity,
+  pf_netsales,
+  orderid,
+  salespersonid,
+  dateinvoiced,
+  pf_facilityid,
+  pf_departmentid,
+  pf_isactualunit,
+  unitprice,
+  totalcharge,
+  transactiontype,
+  productdescription
+)
+AS 
+ SELECT DISTINCT a.accountname, a.createdate, pf.doctorid, pf.pf_productgroup, pf.pf_productline, pf.pf_producttype, pf.productid, pf.pf_quantity, pf.pf_netsales, pf.orderid, pf.salespersonid, pf.dateinvoiced, pf.pf_facilityid, pf.pf_departmentid, pf.pf_isactualunit, oi.unitprice, oi.totalcharge, oi.transactiontype, p.description AS productdescription
+   FROM tableau.opx_a_performanceforecast pf
+   JOIN dim.accounts a ON pf.doctorid::text = a.accountid::text AND date_diff('month'::text, pf.dateinvoiced, getdate()) <= 6
+   JOIN fct.orderitem oi ON pf.orderid = oi.orderid AND pf.orderproductid = oi.orderproductid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+  WHERE a.source::text = 'PRK'::text AND a.territoryid::text = 'CONTRACT SALES'::text;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sli_6months_prkcontractsales TO cloudbeam;
+GRANT SELECT ON tableau.sli_6months_prkcontractsales TO operations;
+
+
+COMMIT;

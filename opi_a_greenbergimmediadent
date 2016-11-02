@@ -1,0 +1,39 @@
+CREATE OR REPLACE VIEW tableau.opi_a_greenbergimmediadent
+(
+  accountid,
+  accountname,
+  practicename,
+  groupid,
+  doctorname,
+  orderid,
+  dateinvoicedlocaldts,
+  dateinlocaldts,
+  patientname,
+  productid,
+  departmentid,
+  description,
+  toothstr,
+  quantity,
+  unitprice,
+  discount,
+  remakediscount,
+  totalcharge
+)
+AS 
+ SELECT a.accountid, a.accountname, a.practicename, a.groupid, a.firstname::text + ' '::text + a.lastname::text AS doctorname, o.orderid, o.dateinvoicedlocaldts, o.dateinlocaldts, o.patientfirstname::text + ' '::text + o.patientlastname::text AS patientname, oi.productid, p.departmentid, p.description, oi.toothstr, oi.quantity, oi.unitprice, oi.discount, oi.remakediscount, oi.totalcharge
+   FROM dim.accounts a
+   JOIN fct."order" o ON o.doctorid::text = a.accountid::text
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+  WHERE (a.groupid::text = 'Greenberg'::text OR a.groupid::text = 'Immedia'::text) AND oi.unitprice > 0::numeric(19,4);
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opi_a_greenbergimmediadent TO _tableau;
+GRANT SELECT ON tableau.opi_a_greenbergimmediadent TO _anthonyo;
+GRANT SELECT ON tableau.opi_a_greenbergimmediadent TO _lucy;
+GRANT SELECT ON tableau.opi_a_greenbergimmediadent TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_a_greenbergimmediadent TO cloudbeam;
+GRANT SELECT ON tableau.opi_a_greenbergimmediadent TO _ops;
+
+
+COMMIT;

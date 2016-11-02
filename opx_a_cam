@@ -1,0 +1,49 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cam
+(
+  sequenceid,
+  jobuid,
+  locationid,
+  isautopilot,
+  jobstatus,
+  millingstartdate,
+  millingenddate,
+  jobcreationdate,
+  messagecreationdate,
+  machinetype,
+  millid,
+  serialid,
+  useremail,
+  userlocationid,
+  blockid,
+  blockmaterial,
+  restorationtype,
+  blockheight,
+  shrinkagefactor,
+  blockshade,
+  orderid,
+  restorationscount,
+  quantity,
+  toothstr,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  duedatelocaldts,
+  doctorid,
+  productid,
+  isbridge,
+  pf_departmentid,
+  pf_productline,
+  actualdaysinlab,
+  maxdaysinlab
+)
+AS 
+ SELECT j.sequenceid, j.jobinfo_id AS jobuid, t.traycycle_groupid AS locationid, j.jobinfo_queuename AS isautopilot, j.jobupdate_status AS jobstatus, j.jobupdate_millingstart AS millingstartdate, j.jobupdate_millingend AS millingenddate, j.jobinfo_creationdate AS jobcreationdate, j.messagecreateddate AS messagecreationdate, b.blockinfo_machinetype AS machinetype, j.jobupdate_millid AS millid, j.jobupdate_ncfsid AS serialid, r.user_email AS useremail, r.user_groupid AS userlocationid, t.trayposition_blockid AS blockid, t.trayposition_restoration_materialname AS blockmaterial, t.trayposition_restoration_restorationtypename AS restorationtype, b.blockinfo_height AS blockheight, b.blockinfo_shrinkagefactor AS shrinkagefactor, r.restoration_shade AS blockshade, r.usedpositions_casereference AS orderid, j.jobinfo_restorationscount AS restorationscount, oi.quantity, oi.toothstr, o.dateinlocaldts, o.dateinvoicedlocaldts, o.duedatelocaldts, o.doctorid, oi.productid, oi.isbridge, p.pf_departmentid, p.pf_productline, co.actualdaysinlab, co.maxdaysinlab
+   FROM cp.fct_milltracker_jobs j
+   LEFT JOIN cp.fct_milltracker_tray t ON j.messageid = t.messageid
+   LEFT JOIN cp.fct_milltracker_restoration r ON t.trayposition_restoration_restorationid::text = r.restoration_restorationid::text AND r.sequenceid = t.sequenceid
+   LEFT JOIN cp.fct_milltracker_blockinfo b ON j.messageid = b.messageid
+   LEFT JOIN fct."order" o ON r.usedpositions_casereference::text = o.orderid::text
+   LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid AND oi.toothstr IS NOT NULL
+   LEFT JOIN dim.products p ON p.productid::text = oi.productid::text
+   LEFT JOIN cal."order" co ON o.orderid = co.orderid;
+
+COMMIT;

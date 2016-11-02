@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.csd_a_itsm
+(
+  workorderid,
+  worklogid,
+  createddatetime,
+  respondeddatetime,
+  duebydatetime,
+  completeddatetime,
+  priority,
+  tier,
+  status,
+  createdby,
+  requestedby,
+  ownedby,
+  requestmode,
+  "group",
+  category,
+  department,
+  subject,
+  description,
+  worklogowner,
+  worklogtitle,
+  worklogcreateddatetime,
+  worklogenddatetime,
+  worklogtimespentminutes
+)
+AS 
+ SELECT itsm.workorderid, itsm.worklogid, itsm.createddatetime, itsm.respondeddatetime, itsm.duebydatetime, itsm.completeddatetime, itsm.priority, itsm.tier, itsm.status, itsm.createdby, itsm.requestedby, itsm.ownedby, itsm.requestmode, itsm."group", itsm.category, itsm.department, itsm.subject, itsm.description, itsm.worklogowner, itsm.worklogtitle, itsm.worklogcreateddatetime, itsm.worklogenddatetime, itsm.worklogtimespentminutes
+   FROM fct.itsm;
+
+COMMIT;

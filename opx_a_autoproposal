@@ -1,0 +1,155 @@
+CREATE OR REPLACE VIEW tableau.opx_a_autoproposal
+(
+  orderid,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  groupid,
+  groupname,
+  hostname,
+  operatorid,
+  begintime,
+  endtime,
+  toothnumber,
+  scanbegintime,
+  scanendtime,
+  scandurationseconds,
+  designbegintime,
+  designendtime,
+  designdurationseconds,
+  queuedurationseconds,
+  totaldurationseconds,
+  rejectreason,
+  returnorderid,
+  returnordertype,
+  returnorderdateinlocaldts,
+  returnorderdateinvoicedlocaldts,
+  returnorderremakeid,
+  returnorderremakereason,
+  overallcaseevaluation,
+  fastdesign,
+  "3shape",
+  automatedmilling,
+  manualmilling
+)
+AS 
+ SELECT o.orderid, o.doctorid, o.dateinlocaldts, o.dateinvoicedlocaldts, x.groupid, x.groupname, x.hostname, x.operatorid, x.begintime, x.endtime, x.toothnumber, 
+        CASE
+            WHEN len(sc.beginutctime::text) >= 10 THEN "replace"("left"(sc.beginutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+            ELSE NULL::timestamp without time zone
+        END AS scanbegintime, 
+        CASE
+            WHEN len(sc.endutctime::text) >= 10 THEN "replace"("left"(sc.endutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+            ELSE NULL::timestamp without time zone
+        END AS scanendtime, sc.durationseconds::integer AS scandurationseconds, 
+        CASE
+            WHEN len(de.beginutctime::text) >= 10 THEN "replace"("left"(de.beginutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+            ELSE NULL::timestamp without time zone
+        END AS designbegintime, 
+        CASE
+            WHEN len(de.endutctime::text) >= 10 THEN "replace"("left"(de.endutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+            ELSE NULL::timestamp without time zone
+        END AS designendtime, de.durationseconds::integer AS designdurationseconds, date_diff('seconds'::character varying::text, ("left"(x.begintime::character varying::text, 10) + ' '::character varying::text + "substring"(x.begintime::character varying::text, 12, 8))::timestamp without time zone, ("left"(x.endtime::character varying::text, 10) + ' '::character varying::text + "substring"(x.endtime::character varying::text, 12, 8))::timestamp without time zone)::integer - (COALESCE(sc.durationseconds::integer, 0) + COALESCE(de.durationseconds::integer, 0)) AS queuedurationseconds, date_diff('seconds'::character varying::text, ("left"(x.begintime::character varying::text, 10) + ' '::character varying::text + "substring"(x.begintime::character varying::text, 12, 8))::timestamp without time zone, ("left"(x.endtime::character varying::text, 10) + ' '::character varying::text + "substring"(x.endtime::character varying::text, 12, 8))::timestamp without time zone)::integer AS totaldurationseconds, dr.reason AS rejectreason, o1.returnorderid, o1.returnordertype, o1.returnorderdateinlocaldts, o1.returnorderdateinvoicedlocaldts, o1.returnorderremakeid, o1.returnorderremakereason, s.evalanswer AS overallcaseevaluation, 
+        CASE
+            WHEN COALESCE(fds.recordcount, fdd.recordcount) > 0 THEN 1
+            ELSE NULL::integer
+        END AS fastdesign, 
+        CASE
+            WHEN sss.orderid IS NOT NULL AND (sss.firstscan >= o.dateinlocaldts AND sss.firstscan <= o.dateinvoicedlocaldts OR sss.lastscan >= o.dateinlocaldts AND sss.lastscan <= o.dateinvoicedlocaldts) THEN 1
+            ELSE NULL::integer
+        END AS "3shape", 
+        CASE
+            WHEN am.orderid IS NOT NULL AND (am.firstmill >= o.dateinlocaldts AND am.firstmill <= o.dateinvoicedlocaldts OR am.lastmill >= o.dateinlocaldts AND am.lastmill <= o.dateinvoicedlocaldts) THEN 1
+            ELSE NULL::integer
+        END AS automatedmilling, 
+        CASE
+            WHEN "mm".orderid IS NOT NULL AND ("mm".firstmill >= o.dateinlocaldts AND "mm".firstmill <= o.dateinvoicedlocaldts OR "mm".lastmill >= o.dateinlocaldts AND "mm".lastmill <= o.dateinvoicedlocaldts) THEN 1
+            ELSE NULL::integer
+        END AS manualmilling
+   FROM fct."order" o
+   JOIN cal."order" o1 ON o1.orderid = o.orderid
+   JOIN ( SELECT m.orderidoriginator AS orderid, m.groupid, m.groupname, m.hostname, m.operatorid, x.toothnumber, min(
+           CASE
+               WHEN len(m.beginutctime::text) >= 10 THEN "replace"("left"(m.beginutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+               ELSE NULL::timestamp without time zone
+           END) AS begintime, "max"(
+           CASE
+               WHEN len(m.endutctime::text) >= 10 THEN "replace"("left"(m.endutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+               ELSE NULL::timestamp without time zone
+           END) AS endtime, "max"(m.messageid) AS messageid
+      FROM cp.fct_cadmessages m
+   JOIN ( SELECT DISTINCT m.orderidoriginator, m.groupid, m.groupname, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber
+              FROM cp.fct_cadmessages m
+         LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+        WHERE m.subjectname::text = 'CAD-AutoProposal'::character varying::text) x ON x.orderidoriginator::text = m.orderidoriginator::text AND x.groupid::text = m.groupid::text AND x.groupname::text = m.groupname::text
+  GROUP BY m.orderidoriginator, m.groupid, m.groupname, m.hostname, m.operatorid, x.toothnumber) x ON x.orderid::text = o.orderid::character varying::text AND x.begintime >= o.dateinlocaldts AND x.begintime <= COALESCE(o.dateinvoicedlocaldts, getdate())
+   JOIN ( SELECT m.orderidoriginator AS orderid, m.groupid, x.toothnumber, ("left"(min(m.beginutctime::text)::character varying::text, 10) + ' '::character varying::text + "substring"(min(m.beginutctime::text)::character varying::text, 12, 8))::timestamp without time zone AS begintime, ("left"("max"(m.endutctime::text)::character varying::text, 10) + ' '::character varying::text + "substring"("max"(m.endutctime::text)::character varying::text, 12, 8))::timestamp without time zone AS endtime
+   FROM cp.fct_cadmessages m
+   JOIN ( SELECT DISTINCT m.orderidoriginator, m.groupid, m.groupname, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber
+           FROM cp.fct_cadmessages m
+      LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+     WHERE m.subjectname::text = 'CAD-AutoProposal'::character varying::text) x ON x.orderidoriginator::text = m.orderidoriginator::text AND x.groupid::text = m.groupid::text AND x.groupname::text = m.groupname::text
+  GROUP BY m.orderidoriginator, m.groupid, x.toothnumber) y ON y.orderid::text = o.orderid::character varying::text AND y.begintime >= o.dateinlocaldts AND y.begintime <= COALESCE(o.dateinvoicedlocaldts, getdate())
+   LEFT JOIN ( SELECT m.orderidoriginator AS orderid, m.operatorid, m.beginutctime, m.endutctime, m.durationseconds, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, m1.messageid AS firstmessageid, m.messageid AS lastmessageid
+   FROM cp.fct_cadmessages m
+   LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+   LEFT JOIN cp.fct_cadmessages m1 ON m1.orderidoriginator::text = m.orderidoriginator::text AND m1.operatorid::text = m1.operatorid::text AND m1.beginutctime::text = m.beginutctime::text AND m1.event::text <> 'Complete'::character varying::text
+  WHERE m.workflowstep::text = 'Scan'::character varying::text AND m.event::text = 'Complete'::character varying::text) sc ON sc.orderid::text = x.orderid::text AND sc.toothnumber::text = x.toothnumber::text AND sc.operatorid::text = x.operatorid::text
+   LEFT JOIN ( SELECT fd.orderid, fd.toothnumber, count(1) AS recordcount
+   FROM ( SELECT fd.caseid::character varying AS orderid, fd.tooth AS toothnumber, "left"(fd.enddtslocal::character varying::text, 16)::timestamp without time zone AS enddtslocal
+           FROM fct.centralizeddesigns fd
+          WHERE fd.endevent::text = 'Scan/Complete'::character varying::text) fd
+   LEFT JOIN ( SELECT m.orderidoriginator AS orderid, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, "left"("left"(m.endutctime::text, 10) + ' '::character varying::text + "substring"(m.endutctime::text, 12, 8), 16)::timestamp without time zone AS enddtslocal
+           FROM cp.fct_cadmessages m
+      LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+     WHERE m.workflowstep::text = 'Scan'::character varying::text AND m.event::text = 'Complete'::character varying::text) ms ON ms.orderid::text = fd.orderid::text AND ms.toothnumber::text = fd.toothnumber::text AND ms.enddtslocal = fd.enddtslocal
+  WHERE ms.orderid IS NULL
+  GROUP BY fd.orderid, fd.toothnumber) fds ON fds.orderid::text = sc.orderid::text AND fds.toothnumber::text = sc.toothnumber::text
+   LEFT JOIN ( SELECT m.orderidoriginator AS orderid, m.operatorid, m.beginutctime, m.endutctime, m.durationseconds, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, COALESCE(m1.messageid, 0::bigint) AS firstmessageid, m.messageid AS lastmessageid
+   FROM cp.fct_cadmessages m
+   LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+   LEFT JOIN cp.fct_cadmessages m1 ON m1.orderidoriginator::text = m.orderidoriginator::text AND m1.operatorid::text = m1.operatorid::text AND m1.beginutctime::text = m.beginutctime::text AND m1.event::text <> 'Complete'::character varying::text
+  WHERE m.workflowstep::text = 'Design'::character varying::text AND m.event::text = 'Complete'::character varying::text) de ON de.orderid::text = x.orderid::text AND de.toothnumber::text = x.toothnumber::text AND de.operatorid::text = x.operatorid::text
+   LEFT JOIN ( SELECT r.messageid, r.orderidoriginator AS orderid, r.code, r."type", r.reason
+   FROM cp.fct_cadmessages_reasons r) dr ON dr.orderid::text = de.orderid::text AND dr.messageid >= de.firstmessageid AND dr.messageid <= de.lastmessageid
+   LEFT JOIN ( SELECT fd.orderid, fd.toothnumber, count(1) AS recordcount
+   FROM ( SELECT fd.caseid::character varying AS orderid, fd.tooth AS toothnumber, "left"(fd.enddtslocal::character varying::text, 16)::timestamp without time zone AS enddtslocal
+           FROM fct.centralizeddesigns fd
+          WHERE fd.endevent::text = 'Design/Complete'::character varying::text) fd
+   LEFT JOIN ( SELECT m.orderidoriginator AS orderid, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, 
+                CASE
+                    WHEN len(m.endutctime::text) >= 10 THEN "replace"("left"(m.endutctime::text, 19), 'T'::text, ' '::text)::timestamp without time zone
+                    ELSE NULL::timestamp without time zone
+                END AS enddtslocal
+           FROM cp.fct_cadmessages m
+      LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid
+     WHERE m.workflowstep::text = 'Design'::character varying::text AND m.event::text = 'Complete'::character varying::text) ms ON ms.orderid::text = fd.orderid::text AND ms.toothnumber::text = fd.toothnumber::text AND ms.enddtslocal = fd.enddtslocal
+  WHERE ms.orderid IS NULL
+  GROUP BY fd.orderid, fd.toothnumber) fdd ON fdd.orderid::text = de.orderid::text AND fdd.toothnumber::text = de.toothnumber::text
+   LEFT JOIN ( SELECT caseevaluationsurvey.evalorderid AS orderid, caseevaluationsurvey.evalanswer
+   FROM fct.caseevaluationsurvey
+  WHERE caseevaluationsurvey.evalquestion::text = 'Overall Case'::character varying::text) s ON s.orderid = o.orderid
+   LEFT JOIN ( SELECT s.orderid, si.toothnumber, min(s.scanendlocaldts) AS firstscan, "max"(s.scanendlocaldts) AS lastscan, count(1) AS scancount
+   FROM fct.scan s
+   JOIN fct.scanitem si ON si.scanid::text = s.scanid::text
+  WHERE s.orderid > 0 AND s.applicationname::text = '3Shape'::character varying::text
+  GROUP BY s.orderid, si.toothnumber) sss ON sss.orderid = o.orderid AND sss.toothnumber::character varying::text = x.toothnumber::text
+   LEFT JOIN ( SELECT centralizedmilling.orderid, centralizedmilling.toothstr, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+   FROM fct.centralizedmilling
+  WHERE centralizedmilling.isautopilot::text = 1::character varying::text AND centralizedmilling.millingjobstatus::text = 'Job Completed'::character varying::text
+  GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) am ON am.orderid = o.orderid AND am.toothstr::text = x.toothnumber::text
+   LEFT JOIN ( SELECT centralizedmilling.orderid, centralizedmilling.toothstr, min(centralizedmilling.locationenddate) AS firstmill, "max"(centralizedmilling.locationenddate) AS lastmill, count(1) AS millingcount
+   FROM fct.centralizedmilling
+  WHERE (centralizedmilling.isautopilot::text = 0::character varying::text OR centralizedmilling.isautopilot IS NULL) AND centralizedmilling.millingjobstatus::text = 'Job Completed'::character varying::text
+  GROUP BY centralizedmilling.orderid, centralizedmilling.toothstr) "mm" ON "mm".orderid = o.orderid AND "mm".toothstr::text = x.toothnumber::text;
+
+
+GRANT SELECT ON tableau.opx_a_autoproposal TO _jeffreyd;
+GRANT SELECT ON tableau.opx_a_autoproposal TO operations;
+GRANT SELECT ON tableau.opx_a_autoproposal TO _royluo;
+GRANT SELECT ON tableau.opx_a_autoproposal TO datascienceread;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_autoproposal TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_autoproposal TO _malcolm;
+
+
+COMMIT;

@@ -1,0 +1,20 @@
+CREATE OR REPLACE VIEW tableau.exs_2m_marketingqtycost
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  descr,
+  facility,
+  mktgtype,
+  qtysent,
+  costamount
+)
+AS 
+ SELECT marketingqtycost.recordinsertedlocaldts, marketingqtycost.recordmodifiedlocaldts, marketingqtycost.descr, marketingqtycost.facility, marketingqtycost.mktgtype, marketingqtycost.qtysent, marketingqtycost.costamount
+   FROM agg.marketingqtycost;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.exs_2m_marketingqtycost TO cloudbeam;
+GRANT SELECT ON tableau.exs_2m_marketingqtycost TO operations;
+
+
+COMMIT;

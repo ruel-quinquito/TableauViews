@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opx_1m_caselocation
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  caselocationid,
+  orderid,
+  caselocationsequenceid,
+  caselocationhistoryid,
+  processlabellocationid,
+  checkinutc,
+  checkinlocaldts,
+  checkoututc,
+  checkoutlocaldts,
+  insertedby,
+  updatedby
+)
+AS 
+ SELECT caselocation.recordinsertedlocaldts, caselocation.recordmodifiedlocaldts, caselocation.caselocationid, caselocation.orderid, caselocation.caselocationsequenceid, caselocation.caselocationhistoryid, caselocation.processlabellocationid, caselocation.checkinutc, caselocation.checkinlocaldts, caselocation.checkoututc, caselocation.checkoutlocaldts, caselocation.insertedby, caselocation.updatedby
+   FROM fct.caselocation
+  WHERE caselocation.checkinlocaldts >= (( SELECT getdate() - '1 mon'::interval));
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_1m_caselocation TO _tableau;
+GRANT SELECT ON tableau.opx_1m_caselocation TO _anthonyo;
+GRANT SELECT ON tableau.opx_1m_caselocation TO _lucy;
+GRANT SELECT ON tableau.opx_1m_caselocation TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_1m_caselocation TO cloudbeam;
+GRANT SELECT ON tableau.opx_1m_caselocation TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,34 @@
+CREATE OR REPLACE VIEW tableau.opx_2y_crosssellletters
+(
+  recordprintid,
+  lettersenttodoctorid,
+  lettergenerateddate,
+  letterprintedtime,
+  lettergeneratedby,
+  letterdescription,
+  letterfilename,
+  letterseqid,
+  nocalls,
+  nocallnotes,
+  isduplicate_30,
+  isduplicate_180,
+  valid,
+  invalid,
+  groupname,
+  fullname
+)
+AS 
+ SELECT letters.recordprintid, letters.lettersenttodoctorid, letters.lettergenerateddate, letters.letterprintedtime, letters.lettergeneratedby, letters.letterdescription, letters.letterfilename, letters.letterseqid, letters.nocalls, letters.nocallnotes, letters.isduplicate_30, letters.isduplicate_180, letters."valid", letters.invalid, letters.groupname, letters.fullname
+   FROM fct.letters
+  WHERE letters.lettergenerateddate >= (getdate() - '2 years'::interval) AND letters.groupname IS NOT NULL;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_2y_crosssellletters TO _tableau;
+GRANT SELECT ON tableau.opx_2y_crosssellletters TO _anthonyo;
+GRANT SELECT ON tableau.opx_2y_crosssellletters TO _lucy;
+GRANT SELECT ON tableau.opx_2y_crosssellletters TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_2y_crosssellletters TO cloudbeam;
+GRANT SELECT ON tableau.opx_2y_crosssellletters TO _ops;
+
+
+COMMIT;

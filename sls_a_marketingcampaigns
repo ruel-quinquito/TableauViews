@@ -1,0 +1,66 @@
+CREATE OR REPLACE VIEW tableau.sls_a_marketingcampaigns
+(
+  discountid,
+  coupondescription,
+  lettersprojectcode,
+  lettersprojectdescription,
+  marketingtype,
+  redeemedatfacility,
+  couponsentamount,
+  letterssentamount,
+  projectcost,
+  sentdate,
+  countofdoctorsbycoupon,
+  countofdoctorsbyletter,
+  countoforders,
+  quantity,
+  discount,
+  totalcharge,
+  totaltax
+)
+AS 
+ SELECT m.couponcode AS discountid, m.coupondescription, m.lettersprojectcode, m.lettersprojectdescription, m.marketingtype, m.redeemedatfacility, COALESCE(m.sentamount, 0) AS couponsentamount, 
+        CASE
+            WHEN m.sentamount > 0 THEN m.sentamount::double precision / xx.ctdiv::double precision
+            ELSE 0::double precision
+        END AS letterssentamount, 
+        CASE
+            WHEN m.projectcost > 0::numeric::numeric(18,0)::numeric(19,4) THEN m.projectcost / xx.ctdiv::numeric::numeric(18,0)
+            ELSE 0::numeric::numeric(18,0)
+        END AS projectcost, m.sentdate, COALESCE(x.doctorid, 0::bigint) AS countofdoctorsbycoupon, 
+        CASE
+            WHEN drc.lettersdrcount > 0 THEN drc.lettersdrcount::double precision / xx.ctdiv::double precision
+            ELSE 0::double precision
+        END AS countofdoctorsbyletter, COALESCE(x.orderid, 0::bigint) AS countoforders, COALESCE(x.quantity, 0::numeric::numeric(18,0)) AS quantity, COALESCE(x.discount, 0::numeric::numeric(18,0)) AS discount, COALESCE(x.totalcharge, 0::numeric::numeric(18,0)) AS totalcharge, COALESCE(x.totaltax, 0::numeric::numeric(18,0)) AS totaltax
+   FROM fct.marketingcampaign m
+   LEFT JOIN ( SELECT oi.discountid, count(DISTINCT o.doctorid) AS doctorid, count(DISTINCT oi.orderid) AS orderid, sum(oi.quantity) AS quantity, sum(oi.discount) AS discount, sum(oi.totalcharge) AS totalcharge, sum(oi.totaltax) AS totaltax
+           FROM ( SELECT orderitem.orderid, orderitem.discountid, orderitem.quantity, orderitem.discount, orderitem.totalcharge, orderitem.totaltax
+                   FROM fct.orderitem
+                  WHERE orderitem.discountid IS NOT NULL) oi
+      JOIN ( SELECT "order".orderid, "order".doctorid, "order".dateinlocaldts
+                   FROM fct."order"
+                  WHERE "order".dateinlocaldts >= '2012-01-01 00:00:00'::timestamp without time zone) o ON oi.orderid = o.orderid
+     GROUP BY oi.discountid) x ON m.couponcode::text = x.discountid::text
+   LEFT JOIN ( SELECT marketingcampaign.lettersprojectcode, count(marketingcampaign.couponcode) AS ctdiv
+      FROM fct.marketingcampaign
+     GROUP BY marketingcampaign.lettersprojectcode) xx ON m.lettersprojectcode::text = xx.lettersprojectcode::text
+   LEFT JOIN ( SELECT oi2.lettersprojectcode, count(DISTINCT o.doctorid) AS lettersdrcount
+   FROM ( SELECT oi.orderid, m.lettersprojectcode, oi.discountid, oi.quantity, oi.discount, oi.totalcharge, oi.totaltax
+           FROM fct.orderitem oi
+      JOIN fct.marketingcampaign m ON oi.discountid::text = m.couponcode::text
+     WHERE oi.discountid IS NOT NULL) oi2
+   JOIN ( SELECT "order".orderid, "order".doctorid, "order".dateinlocaldts
+           FROM fct."order"
+          WHERE "order".dateinlocaldts >= '2012-01-01 00:00:00'::timestamp without time zone) o ON oi2.orderid = o.orderid
+  GROUP BY oi2.lettersprojectcode) drc ON m.lettersprojectcode::text = drc.lettersprojectcode::text;
+
+
+GRANT RULE, INSERT, REFERENCES, SELECT, DELETE, TRIGGER, UPDATE ON tableau.sls_a_marketingcampaigns TO _benv;
+GRANT SELECT ON tableau.sls_a_marketingcampaigns TO _anthonyo;
+GRANT SELECT ON tableau.sls_a_marketingcampaigns TO _lucy;
+GRANT DELETE, TRIGGER, RULE, UPDATE, SELECT, REFERENCES, INSERT ON tableau.sls_a_marketingcampaigns TO operations;
+GRANT DELETE, REFERENCES, INSERT, TRIGGER, SELECT, UPDATE, RULE ON tableau.sls_a_marketingcampaigns TO cloudbeam;
+GRANT RULE, SELECT, DELETE, REFERENCES, INSERT, TRIGGER, UPDATE ON tableau.sls_a_marketingcampaigns TO _ops;
+
+
+COMMIT;

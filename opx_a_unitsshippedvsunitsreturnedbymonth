@@ -1,0 +1,67 @@
+CREATE OR REPLACE VIEW tableau.opx_a_unitsshippedvsunitsreturnedbymonth
+(
+  yearmonthinvoiced,
+  originfacilityid,
+  transactiontype,
+  pf_departmentid,
+  pf_producttype,
+  pf_productline,
+  pf_productgroup,
+  pf_isactualunit,
+  toothtype,
+  bridgesize,
+  toothlocation,
+  unitsshipped,
+  gotreturned,
+  returntype,
+  returndatebucket,
+  returnorderremakereasoncategory,
+  unitsreturned
+)
+AS 
+ SELECT date_trunc('month'::text, order360infobypart.dateinvoiceddtslocal) AS yearmonthinvoiced, order360infobypart.originfacilityid, order360infobypart.transactiontype, order360infobypart.pf_departmentid, order360infobypart.pf_producttype, order360infobypart.pf_productline, order360infobypart.pf_productgroup, order360infobypart.pf_isactualunit, order360infobypart.toothtype, 
+        CASE
+            WHEN order360infobypart.toothtype::text = 'Bridge'::text THEN abs(order360infobypart.partquantity)::integer
+            ELSE NULL::integer
+        END AS bridgesize, order360infobypart.toothlocation, sum(order360infobypart.partquantity)::integer AS unitsshipped, order360infobypart.gotreturned, order360infobypart.returntype, 
+        CASE
+            WHEN order360infobypart.daysbeforereturn < 8 THEN '1 week'::text
+            WHEN order360infobypart.daysbeforereturn > 7 AND order360infobypart.daysbeforereturn < 15 THEN '2 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 14 AND order360infobypart.daysbeforereturn < 22 THEN '3 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 21 AND order360infobypart.daysbeforereturn < 31 THEN '4 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 30 AND order360infobypart.daysbeforereturn < 61 THEN 'over 1 month'::text
+            WHEN order360infobypart.daysbeforereturn > 60 AND order360infobypart.daysbeforereturn < 91 THEN 'over 2 months'::text
+            WHEN order360infobypart.daysbeforereturn > 90 AND order360infobypart.daysbeforereturn < 181 THEN 'over 3 months'::text
+            WHEN order360infobypart.daysbeforereturn > 180 AND order360infobypart.daysbeforereturn < 361 THEN 'over 6 months'::text
+            WHEN order360infobypart.daysbeforereturn > 360 THEN 'over 1 year'::text
+            ELSE NULL::text
+        END AS returndatebucket, 
+        CASE
+            WHEN order360infobypart.gotreturned::text = 0::text THEN NULL::character varying
+            ELSE COALESCE(order360infobypart.returnorderremakereasoncategory, 'No Reason Given'::character varying)
+        END AS returnorderremakereasoncategory, sum(order360infobypart.returnquantity)::integer AS unitsreturned
+   FROM agg.order360infobypart
+  WHERE order360infobypart.dateinvoiceddtslocal >= '2010-01-01 00:00:00'::timestamp without time zone AND order360infobypart.transactiontype::text <> 'Credit'::text
+  GROUP BY date_trunc('month'::text, order360infobypart.dateinvoiceddtslocal), order360infobypart.originfacilityid, order360infobypart.transactiontype, order360infobypart.pf_departmentid, order360infobypart.pf_producttype, order360infobypart.pf_productline, order360infobypart.pf_productgroup, order360infobypart.pf_isactualunit, order360infobypart.toothtype, 
+        CASE
+            WHEN order360infobypart.toothtype::text = 'Bridge'::text THEN abs(order360infobypart.partquantity)::integer
+            ELSE NULL::integer
+        END, order360infobypart.toothlocation, order360infobypart.gotreturned, order360infobypart.returntype, 
+        CASE
+            WHEN order360infobypart.gotreturned::text = 0::text THEN NULL::character varying
+            ELSE COALESCE(order360infobypart.returnorderremakereasoncategory, 'No Reason Given'::character varying)
+        END, 
+        CASE
+            WHEN order360infobypart.daysbeforereturn < 8 THEN '1 week'::text
+            WHEN order360infobypart.daysbeforereturn > 7 AND order360infobypart.daysbeforereturn < 15 THEN '2 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 14 AND order360infobypart.daysbeforereturn < 22 THEN '3 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 21 AND order360infobypart.daysbeforereturn < 31 THEN '4 weeks'::text
+            WHEN order360infobypart.daysbeforereturn > 30 AND order360infobypart.daysbeforereturn < 61 THEN 'over 1 month'::text
+            WHEN order360infobypart.daysbeforereturn > 60 AND order360infobypart.daysbeforereturn < 91 THEN 'over 2 months'::text
+            WHEN order360infobypart.daysbeforereturn > 90 AND order360infobypart.daysbeforereturn < 181 THEN 'over 3 months'::text
+            WHEN order360infobypart.daysbeforereturn > 180 AND order360infobypart.daysbeforereturn < 361 THEN 'over 6 months'::text
+            WHEN order360infobypart.daysbeforereturn > 360 THEN 'over 1 year'::text
+            ELSE NULL::text
+        END;
+
+COMMIT;

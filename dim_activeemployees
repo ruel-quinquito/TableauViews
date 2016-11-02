@@ -1,0 +1,58 @@
+CREATE OR REPLACE VIEW tableau.dim_activeemployees
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  gpdb,
+  gpdbid,
+  employeeid,
+  isrecordinactive,
+  lastname,
+  firstname,
+  age,
+  maritalstatus,
+  gender,
+  locationid,
+  facilityid,
+  dlplusfacilityid,
+  kronoslocationid,
+  activedirectorylocationid,
+  divisionid,
+  divisiongpdescription,
+  divisionkronosdescription,
+  departmentcode,
+  departmentdescription,
+  buildingnamegp,
+  buildingnameactivedirectory,
+  jobtitle,
+  jobtitledescription,
+  supervisorcode,
+  supervisordescription,
+  supervisoremployeeid,
+  employmenttype,
+  originalhiredate,
+  benefitexpiredate,
+  lastdateworked,
+  adjustedhiredate,
+  senioritydate,
+  inactivedate,
+  workshiftcurrent,
+  isdirectlaborcurrent,
+  hrstatus,
+  recordsequence
+)
+AS 
+ SELECT gpemployee.recordinsertedlocaldts, gpemployee.recordmodifiedlocaldts, gpemployee.gpdb, gpemployee.gpdbid, gpemployee.employeeid, gpemployee.isrecordinactive, gpemployee.lastname, gpemployee.firstname, gpemployee.age, gpemployee.maritalstatus, gpemployee.gender, gpemployee.locationid, gpemployee.facilityid, gpemployee.dlplusfacilityid, gpemployee.kronoslocationid, gpemployee.activedirectorylocationid, gpemployee.divisionid, gpemployee.divisiongpdescription, gpemployee.divisionkronosdescription, gpemployee.departmentcode, gpemployee.departmentdescription, gpemployee.buildingnamegp, gpemployee.buildingnameactivedirectory, gpemployee.jobtitle, gpemployee.jobtitledescription, gpemployee.supervisorcode, gpemployee.supervisordescription, gpemployee.supervisoremployeeid, gpemployee.employmenttype, gpemployee.originalhiredate, gpemployee.benefitexpiredate, gpemployee.lastdateworked, gpemployee.adjustedhiredate, gpemployee.senioritydate, gpemployee.inactivedate, gpemployee.workshiftcurrent, gpemployee.isdirectlaborcurrent, gpemployee.hrstatus, gpemployee.recordsequence
+   FROM fct.gpemployee
+  WHERE gpemployee.isrecordinactive = 0 AND gpemployee.inactivedate IS NULL AND gpemployee.lastdateworked IS NULL AND gpemployee.recordsequence = 1;
+
+
+GRANT SELECT ON tableau.dim_activeemployees TO _anthonyo;
+GRANT SELECT ON tableau.dim_activeemployees TO _lucy;
+GRANT SELECT ON tableau.dim_activeemployees TO operations;
+GRANT SELECT ON tableau.dim_activeemployees TO _hr;
+GRANT SELECT ON tableau.dim_activeemployees TO humanresource;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.dim_activeemployees TO cloudbeam;
+GRANT SELECT ON tableau.dim_activeemployees TO _ops;
+
+
+COMMIT;

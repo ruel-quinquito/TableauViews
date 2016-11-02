@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opi_3m_invoicedtasks
+(
+  orderid,
+  doctorid,
+  patientfirstname,
+  patientlastname,
+  taskname,
+  taskperformedby,
+  taskcompleteddate,
+  locationcheckindate,
+  locationbuilding
+)
+AS 
+ SELECT lh.orderid, o.doctorid, o.patientfirstname, o.patientlastname, ctl.taskname, ctl.taskperformedby, ctl.taskcompleteddate, lh.locationcheckindate, lh.locationbuilding
+   FROM tableau.opx_6m_locationhistory lh
+   JOIN ( SELECT ct.taskorderid, ct.taskname, ct.taskperformedby, ct.taskcompleteddate
+           FROM fct.casetaskslog ct
+      JOIN ( SELECT casetaskslog.taskorderid, casetaskslog.taskname, "max"(casetaskslog.taskcompleteddate) AS maxtaskcompleteddate
+                   FROM fct.casetaskslog
+                  WHERE upper(casetaskslog.taskname::text) = 'INVOICE'::character varying::text
+                  GROUP BY casetaskslog.taskorderid, casetaskslog.taskname) x ON ct.taskorderid = x.taskorderid AND ct.taskname::text = x.taskname::text AND ct.taskcompleteddate = x.maxtaskcompleteddate) ctl ON lh.orderid = ctl.taskorderid
+   JOIN fct."order" o ON lh.orderid = o.orderid
+  WHERE upper(lh.locationprocess::text) = 'INVOICE PENDING'::character varying::text AND lh.lastlocation::text = 1::character varying::text AND lh.locationcheckindate >= date_add('month'::character varying::text, - 3::bigint, getdate());
+
+
+GRANT SELECT ON tableau.opi_3m_invoicedtasks TO operations;
+GRANT TRIGGER, RULE, UPDATE, INSERT, REFERENCES, SELECT, DELETE ON tableau.opi_3m_invoicedtasks TO bidevelopers;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_3m_invoicedtasks TO cloudbeam;
+
+
+COMMIT;

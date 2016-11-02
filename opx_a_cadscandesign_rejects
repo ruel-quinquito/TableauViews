@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign_rejects
+(
+  messageid,
+  orderid,
+  teethnumber,
+  orderid_teeth,
+  operator_id,
+  operator_hostanme,
+  operator_groupid,
+  operator_groupname,
+  originatorfacilityid,
+  applicationid,
+  begindate,
+  enddate,
+  noticedataobjectdurationseconds,
+  rejection_workflowstep,
+  rejection_code,
+  rejection_type,
+  rejection_reason
+)
+AS 
+ SELECT DISTINCT fct_cad_scandesign.messageid, fct_cad_scandesign.orderid, fct_cad_scandesign.teethnumber, fct_cad_scandesign.orderid_teeth, fct_cad_scandesign.operatorid AS operator_id, fct_cad_scandesign.hostname AS operator_hostanme, fct_cad_scandesign.logininfogroupid AS operator_groupid, fct_cad_scandesign.logininfogroupname AS operator_groupname, fct_cad_scandesign.originatorfacilityid, fct_cad_scandesign.applicationid, fct_cad_scandesign.begindate, fct_cad_scandesign.enddate, fct_cad_scandesign.noticedataobjectdurationseconds, fct_cad_scandesign.noticedataobjectworkflowstep AS rejection_workflowstep, fct_cad_scandesign.caserejectionreasonscode AS rejection_code, fct_cad_scandesign.caserejectionreasonstype AS rejection_type, fct_cad_scandesign.caserejectionreasonsreason AS rejection_reason
+   FROM cp.fct_cad_scandesign
+  WHERE fct_cad_scandesign.caserejectionreasonscode IS NOT NULL;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign_rejects TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign_rejects TO operations;
+
+
+COMMIT;

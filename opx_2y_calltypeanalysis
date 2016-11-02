@@ -1,0 +1,64 @@
+CREATE OR REPLACE VIEW tableau.opx_2y_calltypeanalysis
+(
+  assignby,
+  assigndate,
+  callid,
+  caseid,
+  compdate,
+  comptime,
+  compuser,
+  creator,
+  date,
+  datein,
+  dateout,
+  description,
+  feedback,
+  patientfirst,
+  patientlast,
+  deleted,
+  departmentid,
+  location,
+  status,
+  type,
+  userid,
+  note,
+  locationid,
+  accountid,
+  doctorfirstname,
+  doctorlastname,
+  istestaccount,
+  state,
+  licensenumber,
+  prospect,
+  productid,
+  pf_productgroup,
+  pf_productline,
+  unitgroupid,
+  fullname,
+  groupname
+)
+AS 
+ SELECT c.assignby, c.assigndate, c.callid, c.caseid, c.compdate, c.comptime, c.compuser, c.creator, c.date, c.datein, c.dateout, c.description, c.feedback, c.patientfirst, c.patientlast, c.deleted, c.departmentid, c."location", c.status, c."type", c.userid, cn.note, "left"(a.accountid::text, 2) AS locationid, a.accountid, a.firstname AS doctorfirstname, a.lastname AS doctorlastname, a.istestaccount, a.state, a.licensenumber, a.prospect, p.productid, p.pf_productgroup, p.pf_productline, p.unitgroupid, x.fullname, x.groupname
+   FROM fct.calls c
+   LEFT JOIN dim.accounts a ON c.doctorid::text = a.accountid::text
+   LEFT JOIN fct.callnotes cn ON c.callid::text = cn.callid::text
+   LEFT JOIN ( SELECT a.doctorid, a.orderid, a.productid, a.dateinlocaldts, pg_catalog.row_number()
+  OVER( 
+  PARTITION BY a.doctorid
+  ORDER BY a.dateinlocaldts) AS row_num
+   FROM cal.accountstatusbyproductgroup a
+  WHERE a.accountproductgroupstatusseqid = 1) z ON c.doctorid::text = z.doctorid::text
+   LEFT JOIN dim.products p ON z.productid::text = p.productid::text
+   LEFT JOIN ( SELECT DISTINCT l.lettergeneratedby, l.fullname, l.groupname
+   FROM fct.letters l) x ON c.userid::text = x.lettergeneratedby::text
+  WHERE c.date >= (getdate() - '2 years'::interval) AND z.row_num = 1;
+
+
+GRANT SELECT ON tableau.opx_2y_calltypeanalysis TO _anthonyo;
+GRANT SELECT ON tableau.opx_2y_calltypeanalysis TO executive;
+GRANT SELECT ON tableau.opx_2y_calltypeanalysis TO _lucy;
+GRANT SELECT ON tableau.opx_2y_calltypeanalysis TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_2y_calltypeanalysis TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,118 @@
+CREATE OR REPLACE VIEW tableau.opx_a_enterprisemilling
+(
+  startdts,
+  startdate,
+  enddts,
+  enddate,
+  millingjobuid,
+  millingpartsequenceid,
+  millingfacilityid,
+  millinglocation,
+  isautopilot,
+  millingqueueuid,
+  arboruid,
+  arbornumber,
+  millingjobstatus,
+  locationinserteddate,
+  locationprocesseddate,
+  locationmodifieddate,
+  millmachineid,
+  millmachineserialnumber,
+  millmachinevendor,
+  millmachinemodel,
+  millmachinetype,
+  millingtechnicianid,
+  nestingtechnicianid,
+  jobname,
+  blockid,
+  blockmaterial,
+  blocktype,
+  blocksize,
+  stockenlargementfactor,
+  blockserialnumber,
+  blockheight,
+  blockcolor,
+  blockusagesequence,
+  queuedtimeinminutes,
+  runtimeinminutes,
+  partkind,
+  parttypegroup,
+  parttype,
+  shade,
+  productid,
+  orderid,
+  toothstr,
+  toothmask,
+  isbridge,
+  isupper,
+  isanterior,
+  milledinsamejobseqid,
+  totalunits,
+  totalcycletime,
+  cycletimeperunit,
+  produnits,
+  nonprodunits,
+  remillunits,
+  qcstatus,
+  qcrejectreasoncategory,
+  qcrejectreason,
+  trayslotnumber,
+  trayserialnumber,
+  errormessage,
+  isremill,
+  remillseqid,
+  remillofmillingjobuid,
+  remillofmillingpartsequenceid,
+  remillreasoncategory,
+  remillreason,
+  remillofautopilot,
+  millingqccompleteddate,
+  sinterqccompleteddate,
+  requireremillunits,
+  internalpriceperblock,
+  internalpriceperunit,
+  costperunit,
+  isbruxzirblock
+)
+AS 
+ SELECT mj.locationstartdate AS startdts, date_trunc('week'::character varying::text, mj.locationenddate) AS startdate, mj.locationenddate AS enddts, date_trunc('week'::character varying::text, mj.locationenddate) AS enddate, mj.millingjobuid, mj.millingpartsequenceid, mj.millingfacilityid, mj.millinglocation, mj.isautopilot, mj.millingqueueuid, mj.arboruid, mj.arbornumber, mj.millingjobstatus, mj.locationinserteddate, mj.locationprocesseddate, mj.locationmodifieddate, mj.millmachineid, mj.millmachineserialnumber, mj.millmachinevendor, mj.millmachinemodel, mj.millmachinetype, mj.millingtechnicianid, mj.nestingtechnicianid, mj.jobname, mj.blockid, mj.blockmaterial, mj.blocktype, mj.blocksize, mj.stockenlargementfactor, mj.blockserialnumber, mj.blockheight, mj.blockcolor, mj.blockusagesequence, mj.queuedtimeinminutes, mj.runtimeinminutes, mj.partkind, mj.parttypegroup, mj.parttype, mj.shade, mj.productid, mj.orderid, mj.toothstr, mj.toothmask, mj.isbridge, mj.isupper, mj.isanterior, mj.milledinsamejobseqid, mj.totalunits, mj.totalcycletime, mj.cycletimeperunit, mj.produnits, mj.nonprodunits, mj.remillunits, mj.qcstatus, mj.qcrejectreasoncategory, mj.qcrejectreason, mj.trayslotnumber, mj.trayserialnumber, mj.errormessage, mj.isremill, mj.remillseqid, mj.remillofmillingjobuid, mj.remillofmillingpartsequenceid, mj.remillreasoncategory, mj.remillreason, mj.remillofautopilot, mj.millingqccompleteddate, mj.sinterqccompleteddate, mj.requireremillunits, 
+        CASE
+            WHEN mj.blockheight = 12 THEN 41.00
+            WHEN mj.blockheight = 15 THEN 49.00
+            WHEN mj.blockheight = 20 THEN 63.00
+            WHEN mj.blockheight = 25 THEN 77.00
+            WHEN mj.blockheight = 30 THEN 105.00
+            ELSE 49.00
+        END AS internalpriceperblock, 
+        CASE
+            WHEN mj.blockheight = 12 THEN 2.5625
+            WHEN mj.blockheight = 15 THEN 3.0625
+            WHEN mj.blockheight = 20 THEN 3.9375
+            WHEN mj.blockheight = 25 THEN 4.8125
+            WHEN mj.blockheight = 30 THEN 6.5625
+            ELSE 3.0625
+        END AS internalpriceperunit, 
+        CASE
+            WHEN mj.blockheight = 12 THEN 5.7725
+            WHEN mj.blockheight = 15 THEN 6.2725
+            WHEN mj.blockheight = 20 THEN 7.1475
+            WHEN mj.blockheight = 25 THEN 8.0225
+            WHEN mj.blockheight = 30 THEN 9.7725
+            ELSE 6.2725
+        END AS costperunit, 
+        CASE
+            WHEN mj.blockserialnumber >= 0 THEN 1
+            ELSE 0
+        END AS isbruxzirblock
+   FROM fct.centralizedmilling mj
+  WHERE mj.millingjobstatus::text = 'Job Completed'::character varying::text;
+
+
+GRANT SELECT ON tableau.opx_a_enterprisemilling TO _tableau;
+GRANT SELECT ON tableau.opx_a_enterprisemilling TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_enterprisemilling TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opx_a_enterprisemilling TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_a_enterprisemilling TO cloudbeam;
+
+
+COMMIT;

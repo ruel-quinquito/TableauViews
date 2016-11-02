@@ -1,0 +1,19 @@
+CREATE OR REPLACE VIEW tableau.dim_paydates
+(
+  checkdate,
+  payperiodbegindate,
+  payperiodenddate
+)
+AS 
+ SELECT DISTINCT gpemployeepayhistory.checkdate, date_add('day'::text, -11::bigint, gpemployeepayhistory.checkdate) AS payperiodbegindate, date_add('day'::text, -5::bigint, gpemployeepayhistory.checkdate) AS payperiodenddate
+   FROM pay.gpemployeepayhistory
+  WHERE "date_part"('weekday'::text, gpemployeepayhistory.checkdate) = 5
+  ORDER BY gpemployeepayhistory.checkdate;
+
+
+GRANT SELECT ON tableau.dim_paydates TO _anthonyo;
+GRANT SELECT ON tableau.dim_paydates TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.dim_paydates TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,16 @@
+CREATE OR REPLACE VIEW tableau.exs_a_weeklyemployeesummary
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  facilityid,
+  headcountcurrentperiod_day,
+  headcountpreviousperiod_day,
+  headcountcurrentperiod_night,
+  headcountpreviousperiod_night,
+  reportdate
+)
+AS 
+ SELECT weeklyemployeesummary.recordinsertedlocaldts, weeklyemployeesummary.recordmodifiedlocaldts, weeklyemployeesummary.facilityid, weeklyemployeesummary.headcountcurrentperiod_day, weeklyemployeesummary.headcountpreviousperiod_day, weeklyemployeesummary.headcountcurrentperiod_night, weeklyemployeesummary.headcountpreviousperiod_night, weeklyemployeesummary.reportdate
+   FROM sum.weeklyemployeesummary;
+
+COMMIT;

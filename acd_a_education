@@ -1,0 +1,26 @@
+CREATE OR REPLACE VIEW tableau.acd_a_education
+(
+  doctorid,
+  doctor,
+  licensenumber,
+  course,
+  type,
+  method,
+  hours,
+  submitted,
+  startdate,
+  enddate
+)
+AS 
+ SELECT education.doctorid, education.doctor, education.licensenumber, education.course, education."type", education.method, education.hours, education.submitted, education.startdate, education.enddate
+   FROM fct.education;
+
+
+GRANT SELECT ON tableau.acd_a_education TO _anthonyo;
+GRANT SELECT ON tableau.acd_a_education TO _lucy;
+GRANT SELECT ON tableau.acd_a_education TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.acd_a_education TO cloudbeam;
+GRANT SELECT ON tableau.acd_a_education TO _ops;
+
+
+COMMIT;

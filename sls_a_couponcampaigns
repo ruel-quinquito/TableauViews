@@ -1,0 +1,97 @@
+CREATE OR REPLACE VIEW tableau.sls_a_couponcampaigns
+(
+  discountid,
+  coupondescription,
+  source,
+  lettersprojectcode,
+  lettersprojectdescription,
+  marketingtype,
+  redeemedatfacility,
+  couponsentamount,
+  letterssentamount,
+  projectcost,
+  sentdate,
+  countofdoctorsbycoupon,
+  countofdoctorsbyletter,
+  countoforders,
+  quantity,
+  discount,
+  totalcharge,
+  totaltax
+)
+AS 
+ SELECT m.couponcode AS discountid, m.coupondescription, 'legacy' AS source, m.lettersprojectcode, m.lettersprojectdescription, m.marketingtype, m.redeemedatfacility, COALESCE(m.sentamount, 0) AS couponsentamount, 
+        CASE
+            WHEN m.sentamount > 0 THEN m.sentamount::double precision / xx.ctdiv::double precision
+            ELSE 0::double precision
+        END AS letterssentamount, 
+        CASE
+            WHEN m.projectcost > 0::numeric::numeric(18,0)::numeric(19,4) THEN m.projectcost / xx.ctdiv::numeric::numeric(18,0)
+            ELSE 0::numeric::numeric(18,0)
+        END AS projectcost, m.sentdate, COALESCE(x.doctorid, 0::bigint) AS countofdoctorsbycoupon, 
+        CASE
+            WHEN drc.lettersdrcount > 0 THEN drc.lettersdrcount::double precision / xx.ctdiv::double precision
+            ELSE 0::double precision
+        END AS countofdoctorsbyletter, COALESCE(x.orderid, 0::bigint) AS countoforders, COALESCE(x.quantity, 0::numeric::numeric(18,0)) AS quantity, COALESCE(x.discount, 0::numeric::numeric(18,0)) AS discount, COALESCE(x.totalcharge, 0::numeric::numeric(18,0)) AS totalcharge, COALESCE(x.totaltax, 0::numeric::numeric(18,0)) AS totaltax
+   FROM fct.marketingcampaign m
+   LEFT JOIN ( SELECT oi.discountid, count(DISTINCT o.doctorid) AS doctorid, count(DISTINCT oi.orderid) AS orderid, sum(oi.quantity) AS quantity, sum(oi.discount) AS discount, sum(oi.totalcharge) AS totalcharge, sum(oi.totaltax) AS totaltax
+           FROM ( SELECT orderitem.orderid, orderitem.discountid, orderitem.quantity, orderitem.discount, orderitem.totalcharge, orderitem.totaltax
+                   FROM fct.orderitem
+                  WHERE orderitem.discountid IS NOT NULL) oi
+      JOIN ( SELECT "order".orderid, "order".doctorid, "order".dateinlocaldts
+                   FROM fct."order"
+                  WHERE "order".dateinlocaldts >= '2012-01-01 00:00:00'::timestamp without time zone) o ON oi.orderid = o.orderid
+     GROUP BY oi.discountid) x ON m.couponcode::text = x.discountid::text
+   LEFT JOIN ( SELECT marketingcampaign.lettersprojectcode, count(marketingcampaign.couponcode) AS ctdiv
+      FROM fct.marketingcampaign
+     GROUP BY marketingcampaign.lettersprojectcode) xx ON m.lettersprojectcode::text = xx.lettersprojectcode::text
+   LEFT JOIN ( SELECT oi2.lettersprojectcode, count(DISTINCT o.doctorid) AS lettersdrcount
+   FROM ( SELECT oi.orderid, m.lettersprojectcode, oi.discountid, oi.quantity, oi.discount, oi.totalcharge, oi.totaltax
+           FROM fct.orderitem oi
+      JOIN fct.marketingcampaign m ON oi.discountid::text = m.couponcode::text
+     WHERE oi.discountid IS NOT NULL) oi2
+   JOIN ( SELECT "order".orderid, "order".doctorid, "order".dateinlocaldts
+           FROM fct."order"
+          WHERE "order".dateinlocaldts >= '2012-01-01 00:00:00'::timestamp without time zone) o ON oi2.orderid = o.orderid
+  GROUP BY oi2.lettersprojectcode) drc ON m.lettersprojectcode::text = drc.lettersprojectcode::text
+UNION ALL 
+ SELECT cc.coupondiscountid AS discountid, cc.coupondescription::character varying AS coupondescription, 'new' AS source, cc.couponlettersprojectcode AS lettersprojectcode, cc.lettersprojectdescription, cc.couponmarketingtype AS marketingtype, cc.couponfacilityintendedfor AS redeemedatfacility, cc.couponsentamount, 
+        CASE
+            WHEN cc.couponsentamount > 0 THEN cc.couponsentamount::double precision / xx.ctdiv::double precision
+            ELSE 0::numeric::numeric(18,0)::double precision
+        END AS letterssentamount, NULL::"unknown" AS projectcost, cc.couponsentdate AS sentdate, COALESCE(x.doctorid, 0::bigint) AS countofdoctorsbycoupon, 
+        CASE
+            WHEN drc.lettersdrcount > 0 THEN drc.lettersdrcount::double precision / xx.ctdiv::double precision
+            ELSE 0::double precision
+        END AS countofdoctorsbyletter, COALESCE(x.orderid, 0::bigint) AS countoforders, COALESCE(x.quantity, 0::numeric::numeric(18,0)) AS quantity, COALESCE(x.discount, 0::numeric::numeric(18,0)) AS discount, COALESCE(x.totalcharge, 0::numeric::numeric(18,0)) AS totalcharge, COALESCE(x.totaltax, 0::numeric::numeric(18,0)) AS totaltax
+   FROM import.couponcampaign cc
+   LEFT JOIN ( SELECT oi.discountid, count(DISTINCT o.doctorid) AS doctorid, count(DISTINCT oi.orderid) AS orderid, sum(oi.quantity) AS quantity, sum(oi.discount) AS discount, sum(oi.totalcharge) AS totalcharge, sum(oi.totaltax) AS totaltax
+           FROM ( SELECT orderitem.orderid, orderitem.discountid, orderitem.quantity, orderitem.discount, orderitem.totalcharge, orderitem.totaltax
+                   FROM fct.orderitem
+                  WHERE orderitem.discountid IS NOT NULL) oi
+      JOIN ( SELECT ord.orderid, ord.doctorid, ord.dateinlocaldts
+                   FROM fct."order" ord
+                  WHERE ord.dateinlocaldts >= '2016-08-16 00:00:00'::timestamp without time zone) o ON oi.orderid = o.orderid
+     GROUP BY oi.discountid) x ON cc.coupondiscountid::text = x.discountid::text
+   LEFT JOIN ( SELECT couponcampaign.couponlettersprojectcode AS lettersprojectcode, count(couponcampaign.coupondiscountid) AS ctdiv
+      FROM import.couponcampaign
+     GROUP BY couponcampaign.couponlettersprojectcode) xx ON cc.couponlettersprojectcode::text = xx.lettersprojectcode::text
+   LEFT JOIN ( SELECT oi2.lettersprojectcode, count(DISTINCT o2.doctorid) AS lettersdrcount
+   FROM ( SELECT oi.orderid, c.couponlettersprojectcode AS lettersprojectcode, oi.discountid, oi.quantity, oi.discount, oi.totalcharge, oi.totaltax
+           FROM fct.orderitem oi
+      JOIN import.couponcampaign c ON oi.discountid::text = c.coupondiscountid::text
+     WHERE oi.discountid IS NOT NULL) oi2
+   JOIN ( SELECT ord1.orderid, ord1.doctorid, ord1.dateinlocaldts
+           FROM fct."order" ord1
+          WHERE ord1.dateinlocaldts >= '2016-08-16 00:00:00'::timestamp without time zone) o2 ON oi2.orderid = o2.orderid
+  GROUP BY oi2.lettersprojectcode) drc ON cc.couponlettersprojectcode::text = drc.lettersprojectcode::text;
+
+
+GRANT SELECT ON tableau.sls_a_couponcampaigns TO _etl;
+GRANT SELECT ON tableau.sls_a_couponcampaigns TO operations;
+GRANT SELECT ON tableau.sls_a_couponcampaigns TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_a_couponcampaigns TO cloudbeam;
+GRANT SELECT ON tableau.sls_a_couponcampaigns TO _ops;
+
+
+COMMIT;

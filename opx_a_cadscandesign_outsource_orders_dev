@@ -1,0 +1,83 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign_outsource_orders_dev
+(
+  dr_rank,
+  operator_id,
+  operator_groupid,
+  operator_groupname,
+  orderid,
+  orderid_teeth,
+  workflow_step,
+  workflow_event,
+  workflow_result,
+  workflow_startdatetime,
+  workflow_enddatetime,
+  workflow_duration_in_seconds,
+  quetime_in_seconds,
+  rejected_by_operatorid,
+  rejected_by_groupid,
+  rejected_by_groupname,
+  rejected_by_startdatetime,
+  rejected_by_enddatetime,
+  is_scan_rejected,
+  is_design_rejected,
+  systemname,
+  materialbrand,
+  materialidprovider,
+  caserejectionreasonscode,
+  caserejectionreasonsreason,
+  caserejectionreasonstype
+)
+AS 
+ SELECT DISTINCT sr.dr_rank, sr.operator_id, sr.operator_groupid, sr.operator_groupname, sr.orderid, sr.orderid_teeth, sr.workflow_step, sr.workflow_event, sr.workflow_result, sr.workflow_startdatetime, COALESCE(sr.workflow_enddatetime, sr.workflow_startdatetime) AS workflow_enddatetime, 
+        CASE
+            WHEN sr.workflow_duration_in_seconds::text = ''::text OR sr.workflow_duration_in_seconds IS NULL THEN '0'::character varying
+            ELSE sr.workflow_duration_in_seconds
+        END::integer AS workflow_duration_in_seconds, sr.quetime_in_seconds, dr.operator_id AS rejected_by_operatorid, dr.operator_groupid AS rejected_by_groupid, dr.operator_groupname AS rejected_by_groupname, dr.workflow_startdatetime AS rejected_by_startdatetime, dr.workflow_enddatetime AS rejected_by_enddatetime, 
+        CASE
+            WHEN dr.operator_id IS NULL THEN 0
+            ELSE 1
+        END AS is_scan_rejected, 0 AS is_design_rejected, sr.systemname, sr.materialbrand, sr.materialidprovider, dr.caserejectionreasonscode, dr.caserejectionreasonsreason, dr.caserejectionreasonstype
+   FROM ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY sd.orderid_teeth
+          ORDER BY "left"(sd.enddate::character varying::text, 16)) AS dr_rank, sd.operatorid AS operator_id, sd.logininfogroupid AS operator_groupid, sd.logininfogroupname AS operator_groupname, sd.orderid, sd.orderid_teeth, sd.noticedataobjectworkflowstep AS workflow_step, sd.noticedataobjectevent AS workflow_event, sd.begindate AS workflow_startdatetime, sd.enddate AS workflow_enddatetime, sd.noticedataobjectdurationseconds AS workflow_duration_in_seconds, sd.queuetime AS quetime_in_seconds, sd.noticedataobjectworkflowstep_mod AS workflow_result, sd.systemname, sd.materialbrand, sd.materialidprovider
+           FROM sum.scandesign_dev3 sd
+          WHERE sd.noticedataobjectworkflowstep::text = 'Scan'::character varying::text AND sd.noticedataobjectevent::text = 'Complete'::character varying::text) sr
+   LEFT JOIN ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY sd.orderid_teeth
+          ORDER BY "left"(sd.enddate::character varying::text, 16)) AS sr_rank, sd.operatorid AS operator_id, sd.logininfogroupid AS operator_groupid, sd.logininfogroupname AS operator_groupname, sd.orderid_teeth, sd.noticedataobjectworkflowstep AS workflow_step, sd.noticedataobjectevent AS workflow_event, sd.begindate AS workflow_startdatetime, sd.enddate AS workflow_enddatetime, sd.caserejection_from_operatorid AS originating_from_operatorid, sd.caserejectionreasonscode, sd.caserejectionreasonsreason, sd.caserejectionreasonstype
+           FROM sum.scandesign_dev3 sd
+          WHERE sd.noticedataobjectworkflowstep_mod::text = 'Scan-Reject'::character varying::text) dr ON sr.orderid_teeth::text = dr.orderid_teeth::text AND sr.operator_id::text = dr.originating_from_operatorid::text AND dr.sr_rank = sr.dr_rank
+  WHERE sr.operator_groupid::text = '479'::character varying::text OR sr.operator_groupid::text = '481'::character varying::text OR sr.operator_groupid::text = '494'::character varying::text OR sr.operator_groupid::text = '522'::character varying::text OR sr.operator_groupid::text = '529'::character varying::text OR sr.operator_groupid::text = '545'::character varying::text OR sr.operator_groupid::text = '556'::character varying::text OR sr.operator_groupid::text = '573'::character varying::text
+UNION 
+ SELECT DISTINCT sr.dr_rank, sr.operator_id, sr.operator_groupid, sr.operator_groupname, sr.orderid, sr.orderid_teeth, sr.workflow_step, sr.workflow_event, sr.workflow_result, sr.workflow_startdatetime, COALESCE(sr.workflow_enddatetime, sr.workflow_startdatetime) AS workflow_enddatetime, 
+        CASE
+            WHEN sr.workflow_duration_in_seconds::text = ''::text OR sr.workflow_duration_in_seconds IS NULL THEN '0'::character varying
+            ELSE sr.workflow_duration_in_seconds
+        END::integer AS workflow_duration_in_seconds, sr.quetime_in_seconds, dr.operator_id AS rejected_by_operatorid, dr.operator_groupid AS rejected_by_groupid, dr.operator_groupname AS rejected_by_groupname, dr.workflow_startdatetime AS rejected_by_startdatetime, dr.workflow_enddatetime AS rejected_by_enddatetime, 0 AS is_scan_rejected, 
+        CASE
+            WHEN dr.operator_id IS NULL THEN 0
+            ELSE 1
+        END AS is_design_rejected, sr.systemname, sr.materialbrand, sr.materialidprovider, dr.caserejectionreasonscode, dr.caserejectionreasonsreason, dr.caserejectionreasonstype
+   FROM ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY sd.orderid_teeth
+          ORDER BY "left"(COALESCE(sd.enddate, sd.begindate)::text, 16)) AS dr_rank, sd.operatorid AS operator_id, sd.logininfogroupid AS operator_groupid, sd.logininfogroupname AS operator_groupname, sd.orderid, sd.orderid_teeth, sd.noticedataobjectworkflowstep AS workflow_step, sd.noticedataobjectevent AS workflow_event, sd.begindate AS workflow_startdatetime, sd.enddate AS workflow_enddatetime, sd.noticedataobjectdurationseconds AS workflow_duration_in_seconds, sd.queuetime AS quetime_in_seconds, sd.noticedataobjectworkflowstep_mod AS workflow_result, sd.systemname, sd.materialbrand, sd.materialidprovider
+           FROM sum.scandesign_dev3 sd
+          WHERE sd.noticedataobjectworkflowstep::text <> 'Scan'::character varying::text AND (sd.noticedataobjectevent::text = 'Complete'::character varying::text OR sd.noticedataobjectevent::text = 'AutoProposal'::character varying::text)) sr
+   LEFT JOIN ( SELECT pg_catalog.dense_rank()
+          OVER( 
+          PARTITION BY sd.orderid_teeth
+          ORDER BY "left"(COALESCE(sd.enddate, sd.begindate)::character varying::text, 16)) AS sr_rank, sd.operatorid AS operator_id, sd.logininfogroupid AS operator_groupid, sd.logininfogroupname AS operator_groupname, sd.orderid_teeth, sd.noticedataobjectworkflowstep AS workflow_step, sd.noticedataobjectevent AS workflow_event, sd.begindate AS workflow_startdatetime, sd.enddate AS workflow_enddatetime, sd.caserejection_from_operatorid AS originating_from_operatorid, sd.caserejectionreasonscode, sd.caserejectionreasonsreason, sd.caserejectionreasonstype
+           FROM sum.scandesign_dev3 sd
+          WHERE sd.noticedataobjectworkflowstep_mod::text = 'Design-Reject'::character varying::text) dr ON sr.orderid_teeth::text = dr.orderid_teeth::text AND dr.sr_rank = sr.dr_rank
+  WHERE sr.operator_groupid::text = '479'::character varying::text OR sr.operator_groupid::text = '481'::character varying::text OR sr.operator_groupid::text = '494'::character varying::text OR sr.operator_groupid::text = '522'::character varying::text OR sr.operator_groupid::text = '529'::character varying::text OR sr.operator_groupid::text = '545'::character varying::text OR sr.operator_groupid::text = '556'::character varying::text OR sr.operator_groupid::text = '573'::character varying::text
+  ORDER BY 6, 1;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign_outsource_orders_dev TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource_orders_dev TO _malcolm;
+
+
+COMMIT;

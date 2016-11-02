@@ -1,0 +1,26 @@
+CREATE OR REPLACE VIEW tableau.sls_2y_pfemployeecount
+(
+  forecastyear,
+  facilityid,
+  datatype,
+  monthno,
+  empcount
+)
+AS 
+ SELECT x.forecastyear, x.facilityid, x.datatype, x.monthno, x.empcount
+   FROM ( SELECT DISTINCT pf.forecastyear, pf.facilityid, 'CurrentYear'::character varying AS datatype, pf.monthno, pf.curyearempcountbyfacility AS empcount
+           FROM sum.performanceforecast pf
+UNION 
+         SELECT DISTINCT pf.forecastyear, pf.facilityid, 'PreviousYear'::character varying AS datatype, pf.monthno, pf.prvyearempcountbyfacility AS empcount
+           FROM sum.performanceforecast pf) x
+  ORDER BY x.facilityid, x.datatype, x.monthno;
+
+
+GRANT SELECT ON tableau.sls_2y_pfemployeecount TO _anthonyo;
+GRANT SELECT ON tableau.sls_2y_pfemployeecount TO _lucy;
+GRANT SELECT ON tableau.sls_2y_pfemployeecount TO _tableau;
+GRANT SELECT ON tableau.sls_2y_pfemployeecount TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_2y_pfemployeecount TO cloudbeam;
+
+
+COMMIT;

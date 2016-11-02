@@ -1,0 +1,34 @@
+CREATE OR REPLACE VIEW tableau.opx_a_elektraorder
+(
+  islocked,
+  orderid,
+  ordertypeid,
+  originfacilityid,
+  originfacility,
+  doctorid,
+  clientid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  grosssales,
+  discount,
+  totaltax,
+  netsales,
+  totalcharge,
+  maxdaysinlab,
+  labduelocaldts,
+  actualdaysinlab,
+  isreturn,
+  couponcode
+)
+AS 
+ SELECT elektraorder.islocked, elektraorder.orderid, elektraorder.ordertypeid, elektraorder.originfacilityid, elektraorder.originfacility, elektraorder.doctorid, elektraorder.clientid, elektraorder.dateinlocaldts, elektraorder.dateinvoicedlocaldts, elektraorder.grosssales, elektraorder.discount, elektraorder.totaltax, elektraorder.netsales, elektraorder.totalcharge, elektraorder.maxdaysinlab, elektraorder.labduelocaldts, elektraorder.actualdaysinlab, COALESCE(elektraorder.isreturn, '0'::character varying) AS isreturn, elektraorder.couponcode
+   FROM cal.elektraorder
+  WHERE elektraorder.originfacilityid >= 100;
+
+
+GRANT SELECT ON tableau.opx_a_elektraorder TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_elektraorder TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_elektraorder TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,58 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountchurn
+(
+  dateassigned,
+  accountid,
+  contactdts,
+  couponoffered,
+  ratingreason,
+  enteredby,
+  talkto,
+  recommendrating,
+  active,
+  orderid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  productid,
+  quantity,
+  totalcharge,
+  totaltax,
+  pf_departmentid,
+  pf_productgroup,
+  pf_productline,
+  pf_isactualunit
+)
+AS 
+ SELECT ma.dateassigned, ma.accountid, ch.contactdts, ch.couponoffered, ch.ratingreason, ch.enteredby, ch.talkto, ch.recommendrating, ma.active, o.orderid, o.dateinlocaldts, o.dateinvoicedlocaldts, oi.productid, oi.quantity, oi.totalcharge, oi.totaltax, p.pf_departmentid, p.pf_productgroup, p.pf_productline, p.pf_isactualunit
+   FROM ( SELECT DISTINCT split_part(accountchurn_monitoredaccounts.monitoredaccountid::text, ' '::text, 1) AS dateassigned, split_part(accountchurn_monitoredaccounts.monitoredaccountid::text, ' '::text, 2) AS accountid, accountchurn_monitoredaccounts.active
+           FROM test.accountchurn_monitoredaccounts) ma
+   LEFT JOIN ( SELECT split_part(a.lostaccount_rowid::text, ' '::text, 1) AS dateassigned, split_part(a.lostaccount_rowid::text, ' '::text, 2) AS accountid, date_add('hour'::text, a.clienttimezone::bigint, a.contactdts) AS contactdts, b.couponoffered, c.ratingreason, d.enteredby, e.talkto, f.recommendrating
+           FROM test.accountchurn_contacthistory a
+      JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid
+                   FROM test.accountchurn_contacthistory
+                  GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2)) g ON a.id = g.id
+   LEFT JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid, accountchurn_contacthistory.couponoffered
+              FROM test.accountchurn_contacthistory
+             WHERE accountchurn_contacthistory.couponoffered IS NOT NULL
+             GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2), accountchurn_contacthistory.couponoffered) b ON split_part(a.lostaccount_rowid::text, ' '::text, 2) = b.accountid AND a.id = b.id
+   LEFT JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid, accountchurn_contacthistory.ratingreason
+         FROM test.accountchurn_contacthistory
+        WHERE accountchurn_contacthistory.ratingreason IS NOT NULL
+        GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2), accountchurn_contacthistory.ratingreason) c ON split_part(a.lostaccount_rowid::text, ' '::text, 2) = c.accountid AND a.id = c.id
+   LEFT JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid, accountchurn_contacthistory.enteredby
+    FROM test.accountchurn_contacthistory
+   WHERE accountchurn_contacthistory.enteredby IS NOT NULL
+   GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2), accountchurn_contacthistory.enteredby) d ON split_part(a.lostaccount_rowid::text, ' '::text, 2) = d.accountid AND a.id = d.id
+   LEFT JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid, accountchurn_contacthistory.talkto
+   FROM test.accountchurn_contacthistory
+  WHERE accountchurn_contacthistory.talkto IS NOT NULL
+  GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2), accountchurn_contacthistory.talkto) e ON split_part(a.lostaccount_rowid::text, ' '::text, 2) = e.accountid
+   LEFT JOIN ( SELECT "max"(accountchurn_contacthistory.id) AS id, split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2) AS accountid, accountchurn_contacthistory.recommendrating
+   FROM test.accountchurn_contacthistory
+  WHERE accountchurn_contacthistory.recommendrating IS NOT NULL
+  GROUP BY split_part(accountchurn_contacthistory.lostaccount_rowid::text, ' '::text, 2), accountchurn_contacthistory.recommendrating) f ON split_part(a.lostaccount_rowid::text, ' '::text, 2) = f.accountid AND f.id = g.id) ch ON ch.accountid = ma.accountid
+   JOIN fct."order" o ON ma.accountid = o.doctorid::text AND o.ordertypeid <> 4
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+  WHERE p.pf_departmentid::text <> 'LOGISTICS'::text;
+
+COMMIT;

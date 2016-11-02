@@ -1,0 +1,40 @@
+CREATE OR REPLACE VIEW tableau.opx_1m_caselocationorderdetails
+(
+  orderid,
+  productid,
+  quantity,
+  toothstr,
+  pf_departmentid,
+  pf_isactualunit,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  facilityname,
+  buildingname,
+  departmentname,
+  zonename,
+  processname,
+  scantypename,
+  assignedto,
+  assignmentstartlocaldts,
+  assignmentcompletedlocaldts
+)
+AS 
+ SELECT DISTINCT cl.orderid, p.productid, oi.quantity, oi.toothstr, p.pf_departmentid, p.pf_isactualunit, p.pf_productgroup, p.pf_productline, p.pf_producttype, pll.facilityname, pll.buildingname, pll.departmentname, pll.zonename, pll.processname, pll.scantypename, cla.assignedto, cla.assignmentstartlocaldts, cla.assignmentcompletedlocaldts
+   FROM fct.caselocationassignment cla
+   JOIN fct.caselocation cl ON cla.caselocationhistoryid = cl.caselocationhistoryid
+   JOIN fct.orderitem oi ON cl.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+   JOIN dim.processlabellocation pll ON pll.processlabellocationid = cl.processlabellocationid
+  WHERE cla.assignmentstartlocaldts >= (( SELECT getdate() - '1 mon'::interval)) AND p.pf_departmentid::text <> 'LOGISTICS'::text;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_1m_caselocationorderdetails TO _tableau;
+GRANT SELECT ON tableau.opx_1m_caselocationorderdetails TO _anthonyo;
+GRANT SELECT ON tableau.opx_1m_caselocationorderdetails TO _lucy;
+GRANT SELECT ON tableau.opx_1m_caselocationorderdetails TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_1m_caselocationorderdetails TO cloudbeam;
+GRANT SELECT ON tableau.opx_1m_caselocationorderdetails TO _ops;
+
+
+COMMIT;

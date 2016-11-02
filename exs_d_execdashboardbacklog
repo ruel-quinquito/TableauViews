@@ -1,0 +1,193 @@
+CREATE OR REPLACE VIEW tableau.exs_d_execdashboardbacklog
+(
+  departmentid,
+  managername,
+  totalcase,
+  totalcasedue,
+  caseduerate,
+  maxcaseduerate
+)
+AS 
+ SELECT sd.departmentid, pdm.remakedepartmentmanager AS managername, sd.totalcase, sd.totalcasedue, sd.caseduerate, sd.maxcaseduerate
+   FROM ( SELECT s.departmentid, s.totalcase, s.totalcasedue, s.caseduerate, 
+                CASE
+                    WHEN s.caseduerate = m.maxcaseduerate THEN s.caseduerate
+                    ELSE NULL::numeric::numeric(18,0)
+                END AS maxcaseduerate
+           FROM ( SELECT tmprptdata.departmentid, count(DISTINCT tmprptdata.caseid) AS totalcase, count(DISTINCT tmprptdata.passeddue) AS totalcasedue, count(DISTINCT tmprptdata.passeddue)::numeric::numeric(18,0) * 1.00 / count(DISTINCT tmprptdata.caseid)::numeric::numeric(18,0) AS caseduerate
+                   FROM ( SELECT o.originfacility AS facilityid, oi.departmentid, o.orderid AS caseid, o.doctorid, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts, o.actualdaysinlab AS totalactualdaysinlab, o.maxdaysinlab AS planneddaysinlab, 
+                                CASE
+                                    WHEN o.actualdaysinlab > o.maxdaysinlab THEN o.orderid
+                                    ELSE NULL::integer
+                                END AS passeddue, oi.products
+                           FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                   FROM fct."order" o
+                              JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                         JOIN cal."order" o1 ON o1.orderid = o.orderid
+                        WHERE o.dateinvoicedlocaldts >= 
+                              CASE
+                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                  ELSE 'now'::character varying::date - '1 day'::interval
+                              END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                      JOIN ( SELECT c.orderid, c.remakedepartment AS departmentid, ( SELECT COALESCE(rtrim(cp.productid::text) + ', '::character varying::text, ''::character varying::text) + rtrim(cp.productid::text)
+                                           FROM ( SELECT DISTINCT oi.orderid, oi.productid, p.remakedepartment
+                                                   FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                           FROM fct."order" o
+                                                      JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                                 JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                                WHERE o.dateinvoicedlocaldts >= 
+                                                      CASE
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                          ELSE 'now'::character varying::date - '1 day'::interval
+                                                      END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                                              JOIN fct.orderitem oi ON oi.orderid = o.orderid
+                                         JOIN ( SELECT rtrim(p.productid::text) AS productid, rtrim(p.backloggroup::text) AS backloggroup, 
+                                                           CASE
+                                                               WHEN rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA & COMP'::character varying::text OR rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA &amp;'::character varying::text OR rtrim(p.remakedepartment::text) = 'Zirconia/Composite'::character varying::text THEN 'ZIRCONIA/COMPOSITE'::character varying::text
+                                                               ELSE rtrim(p.remakedepartment::text)
+                                                           END AS remakedepartment, rtrim(p.salescategory::text) AS salescategory
+                                                      FROM dim.products p
+                                                     WHERE p.backloggroup IS NOT NULL AND p.remakecategory IS NOT NULL) p ON p.productid = oi.productid::text
+                                        WHERE oi.quantity > 0::numeric::numeric(11,5)) cp
+                                          WHERE cp.orderid = c.orderid AND cp.remakedepartment = c.remakedepartment
+                                         LIMIT 1) AS products
+                                   FROM ( SELECT DISTINCT cp.orderid, cp.remakedepartment
+                                           FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                   FROM fct."order" o
+                                              JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                         JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                        WHERE o.dateinvoicedlocaldts >= 
+                                              CASE
+                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                  ELSE 'now'::character varying::date - '1 day'::interval
+                                              END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) tc
+                                      JOIN ( SELECT DISTINCT oi.orderid, oi.productid, p.remakedepartment
+                                                   FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                           FROM fct."order" o
+                                                      JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                                 JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                                WHERE o.dateinvoicedlocaldts >= 
+                                                      CASE
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                          ELSE 'now'::character varying::date - '1 day'::interval
+                                                      END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                                              JOIN fct.orderitem oi ON oi.orderid = o.orderid
+                                         JOIN ( SELECT rtrim(p.productid::text) AS productid, rtrim(p.backloggroup::text) AS backloggroup, 
+                                                           CASE
+                                                               WHEN rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA & COMP'::character varying::text OR rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA &amp;'::character varying::text OR rtrim(p.remakedepartment::text) = 'Zirconia/Composite'::character varying::text THEN 'ZIRCONIA/COMPOSITE'::character varying::text
+                                                               ELSE rtrim(p.remakedepartment::text)
+                                                           END AS remakedepartment, rtrim(p.salescategory::text) AS salescategory
+                                                      FROM dim.products p
+                                                     WHERE p.backloggroup IS NOT NULL AND p.remakecategory IS NOT NULL) p ON p.productid = oi.productid::text
+                                        WHERE oi.quantity > 0::numeric::numeric(11,5)) cp ON cp.orderid = tc.orderid) c) oi ON oi.orderid = o.orderid) tmprptdata
+                  WHERE tmprptdata.facilityid::text = '10-GDL'::character varying::text AND tmprptdata.departmentid <> 'GENERAL'::character varying::text AND tmprptdata.departmentid <> 'MANUFACTURING'::character varying::text
+                  GROUP BY tmprptdata.departmentid) s
+     CROSS JOIN ( SELECT "max"(summaryd_cte.caseduerate) AS maxcaseduerate
+                   FROM ( SELECT tmprptdata.departmentid, count(DISTINCT tmprptdata.caseid) AS totalcase, count(DISTINCT tmprptdata.passeddue) AS totalcasedue, count(DISTINCT tmprptdata.passeddue)::numeric::numeric(18,0) * 1.00 / count(DISTINCT tmprptdata.caseid)::numeric::numeric(18,0) AS caseduerate
+                           FROM ( SELECT 
+                                        CASE
+                                            WHEN o.originfacility::text = '20-BDL'::text THEN '10-GDL'::character varying
+                                            ELSE o.originfacility
+                                        END AS facilityid, oi.departmentid, o.orderid AS caseid, o.doctorid, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts, o.actualdaysinlab AS totalactualdaysinlab, o.maxdaysinlab AS planneddaysinlab, 
+                                        CASE
+                                            WHEN o.actualdaysinlab > o.maxdaysinlab THEN o.orderid
+                                            ELSE NULL::integer
+                                        END AS passeddue, oi.products
+                                   FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                           FROM fct."order" o
+                                      JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                 JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                WHERE o.dateinvoicedlocaldts >= 
+                                      CASE
+                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                          ELSE 'now'::character varying::date - '1 day'::interval
+                                      END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                              JOIN ( SELECT c.orderid, c.remakedepartment AS departmentid, ( SELECT COALESCE(rtrim(cp.productid::text) + ', '::character varying::text, ''::character varying::text) + rtrim(cp.productid::text)
+                                                   FROM ( SELECT DISTINCT oi.orderid, oi.productid, p.remakedepartment
+                                                           FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                                   FROM fct."order" o
+                                                              JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                                         JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                                        WHERE o.dateinvoicedlocaldts >= 
+                                                              CASE
+                                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                                  ELSE 'now'::character varying::date - '1 day'::interval
+                                                              END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                                                      JOIN fct.orderitem oi ON oi.orderid = o.orderid
+                                                 JOIN ( SELECT rtrim(p.productid::text) AS productid, rtrim(p.backloggroup::text) AS backloggroup, 
+                                                                   CASE
+                                                                       WHEN rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA & COMP'::character varying::text OR rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA &amp;'::character varying::text OR rtrim(p.remakedepartment::text) = 'Zirconia/Composite'::character varying::text THEN 'ZIRCONIA/COMPOSITE'::character varying::text
+                                                                       ELSE rtrim(p.remakedepartment::text)
+                                                                   END AS remakedepartment, rtrim(p.salescategory::text) AS salescategory
+                                                              FROM dim.products p
+                                                             WHERE p.backloggroup IS NOT NULL AND p.remakecategory IS NOT NULL) p ON p.productid = oi.productid::text
+                                                WHERE oi.quantity > 0::numeric::numeric(11,5)) cp
+                                                  WHERE cp.orderid = c.orderid AND cp.remakedepartment = c.remakedepartment
+                                                 LIMIT 1) AS products
+                                           FROM ( SELECT DISTINCT cp.orderid, cp.remakedepartment
+                                                   FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                           FROM fct."order" o
+                                                      JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                                 JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                                WHERE o.dateinvoicedlocaldts >= 
+                                                      CASE
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                          WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                          ELSE 'now'::character varying::date - '1 day'::interval
+                                                      END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) tc
+                                              JOIN ( SELECT DISTINCT oi.orderid, oi.productid, p.remakedepartment
+                                                           FROM ( SELECT o.orderid, o.doctorid, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.casestatusid, o.shipoutcarrierid, o1.maxdaysinlab, o1.actualdaysinlab
+                                                                   FROM fct."order" o
+                                                              JOIN tableau.dim_a_accountsactive a ON a.accountid::text = o.doctorid::text
+                                                         JOIN cal."order" o1 ON o1.orderid = o.orderid
+                                                        WHERE o.dateinvoicedlocaldts >= 
+                                                              CASE
+                                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 0 THEN 'now'::character varying::date - '1 day'::interval - '2 days'::interval
+                                                                  WHEN "date_part"('dow'::character varying::text, 'now'::character varying::date - '1 day'::interval) = 6 THEN 'now'::character varying::date - '1 day'::interval - '1 day'::interval
+                                                                  ELSE 'now'::character varying::date - '1 day'::interval
+                                                              END AND o.dateinvoicedlocaldts < ('now'::character varying::date - '1 day'::interval + '1 day'::interval) AND o.ordertypeid = 0 AND o.originfacilityid < 70 AND o.shipoutcarrierid::text <> 'PickUp'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup Dupont'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup MacArthur'::character varying::text AND o.shipoutcarrierid::text <> 'Pickup VK'::character varying::text AND o.casestatusid IS NULL) o
+                                                      JOIN fct.orderitem oi ON oi.orderid = o.orderid
+                                                 JOIN ( SELECT rtrim(p.productid::text) AS productid, rtrim(p.backloggroup::text) AS backloggroup, 
+                                                                   CASE
+                                                                       WHEN rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA & COMP'::character varying::text OR rtrim(p.remakedepartment::text) = 'GOLD ZIRCONIA &amp;'::character varying::text OR rtrim(p.remakedepartment::text) = 'Zirconia/Composite'::character varying::text THEN 'ZIRCONIA/COMPOSITE'::character varying::text
+                                                                       ELSE rtrim(p.remakedepartment::text)
+                                                                   END AS remakedepartment, rtrim(p.salescategory::text) AS salescategory
+                                                              FROM dim.products p
+                                                             WHERE p.backloggroup IS NOT NULL AND p.remakecategory IS NOT NULL) p ON p.productid = oi.productid::text
+                                                WHERE oi.quantity > 0::numeric::numeric(11,5)) cp ON cp.orderid = tc.orderid) c) oi ON oi.orderid = o.orderid) tmprptdata
+                          WHERE tmprptdata.facilityid::text = '10-GDL'::character varying::text AND tmprptdata.departmentid <> 'GENERAL'::character varying::text AND tmprptdata.departmentid <> 'MANUFACTURING'::character varying::text
+                          GROUP BY tmprptdata.departmentid) summaryd_cte) m) sd
+   LEFT JOIN ( SELECT derived_table2.remakedepartment::character varying AS remakedepartment, derived_table2.remakedepartmentmanager::character varying AS remakedepartmentmanager
+           FROM ( SELECT DISTINCT upper(p.remakedepartment::text) AS remakedepartment, upper(rd.remakedepartmentmanager) AS remakedepartmentmanager
+                   FROM dim.products p
+              JOIN ( SELECT upper(derived_table1.remakedepartment::text) AS remakedepartment, upper(derived_table1.remakedepartmentmanager::text) AS remakedepartmentmanager
+                           FROM ((((((((( SELECT 'BIOTEMPS'::character varying AS departmentid, 'Biotemps'::character varying AS remakedepartment, 'SAE KIM'::character varying AS departmentidmanager, 'SAE KIM'::character varying AS remakedepartmentmanager
+                        UNION 
+                                 SELECT 'FIXED'::character varying AS departmentid, 'PFM'::character varying AS remakedepartment, 'JOE HATTOUNI'::character varying AS departmentidmanager, 'JOE HATTOUNI'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'HI-TECH/ALL CERAMIC'::character varying AS departmentid, 'All Ceramic'::character varying AS remakedepartment, 'KEEVIN SHIGENAKA'::character varying AS departmentidmanager, 'KEEVIN SHIGENAKA'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'IMPLANT'::character varying AS departmentid, 'Implants'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'COMBO/PARTIAL'::character varying AS departmentid, 'COMBO/PARTIALS'::character varying AS remakedepartment, 'JERRY LORD'::character varying AS departmentidmanager, 'JERRY LORD'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'GOLD ZIRCONIA & COMP'::character varying AS departmentid, 'Gold Zirconia & Comp'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'ZIRCONIA/COMPOSITE'::character varying AS departmentid, 'ZIRCONIA/COMPOSITE'::character varying AS remakedepartment, 'PAUL DEL CROGNALE'::character varying AS departmentidmanager, 'PAUL DEL CROGNALE'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'DENTURE/VALPLAST'::character varying AS departmentid, 'DENTURE/VALPLAST'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'THERMOFORM'::character varying AS departmentid, 'Thermoform'::character varying AS remakedepartment, 'DAVID MORALES'::character varying AS departmentidmanager, 'DAVID MORALES'::character varying AS remakedepartmentmanager)
+                        UNION 
+                                 SELECT 'GLIDEWELL MILL CTR'::character varying AS departmentid, 'GLIDEWELL MILL CTR'::character varying AS remakedepartment, 'DARIUS RAUDYS'::character varying AS departmentidmanager, 'DARIUS RAUDYS'::character varying AS remakedepartmentmanager) derived_table1) rd ON upper(p.remakedepartment::text) = upper(rd.remakedepartment)) derived_table2
+UNION 
+         SELECT 'IMPLANT REMOVABLES'::character varying AS "varchar", 'DAVID MORALES'::character varying AS "varchar") pdm ON pdm.remakedepartment::text = sd.departmentid
+  ORDER BY sd.caseduerate DESC;
+
+COMMIT;

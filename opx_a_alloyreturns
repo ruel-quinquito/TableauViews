@@ -1,0 +1,27 @@
+CREATE OR REPLACE VIEW tableau.opx_a_alloyreturns
+(
+  doctorid,
+  previousorderid,
+  returnorderid,
+  returnordertype,
+  returnorderremakeid,
+  returnorderenteredby,
+  returnorderdatein,
+  returnorderdateinvoiced,
+  returnordermaterialid,
+  returnordercomment,
+  returnordermaterialquantity,
+  returnordermaterialnotes
+)
+AS 
+ SELECT ar.doctorid, ar.previousorderid, ar.returnorderid, ar.returnordertype, ar.returnorderremakeid, ar.returnorderenteredby, ar.returnorderdatein, ar.returnorderdateinvoiced, ar.returnordermaterialid, ar.returnordercomment, ar.returnordermaterialquantity, ar.returnordermaterialnotes
+   FROM fct.alloyreturns ar;
+
+
+GRANT SELECT ON tableau.opx_a_alloyreturns TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_alloyreturns TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_alloyreturns TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_alloyreturns TO _ops;
+
+
+COMMIT;

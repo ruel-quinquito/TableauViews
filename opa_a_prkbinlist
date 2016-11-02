@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opa_a_prkbinlist
+(
+  cribbin,
+  itemnumber,
+  itemgroup,
+  description1,
+  prk_item,
+  pf_productline,
+  issueunitofmeasure,
+  overrideorderpoint,
+  onorder,
+  quantity,
+  binquantity,
+  vendor
+)
+AS 
+ SELECT DISTINCT s.cribbin, i.itemnumber, i.itemclass AS itemgroup, i.description1, a.vendoritemnumber AS prk_item, pr.pf_productline, i.issueunitofmeasure, COALESCE(s.overrideorderpoint, 0) AS overrideorderpoint, s.onorder, s.quantity, s.binquantity, i.vendornumber AS vendor
+   FROM dim.station s
+   JOIN dim.inventry i ON s.item::text = i.itemnumber::text
+   LEFT JOIN dim.altvendor a ON i.altvendorno = a.recnumber AND a.vendornumber::text = 'PRK'::text
+   LEFT JOIN dim.podetail pd ON s.cribbin::text = pd.cribbin::text
+   LEFT JOIN dim.po p ON pd.ponumber = p.ponumber
+   LEFT JOIN dim.products pr ON pr.productid::text = a.vendoritemnumber::text
+  WHERE i.vendornumber::text = 'PRK'::text OR i.vendornumber::text = 'PDI'::text OR i.vendornumber::text = 'PDINJ'::text;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_a_prkbinlist TO cloudbeam;
+GRANT SELECT ON tableau.opa_a_prkbinlist TO operations;
+
+
+COMMIT;

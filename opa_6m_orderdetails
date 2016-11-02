@@ -1,0 +1,98 @@
+CREATE OR REPLACE VIEW tableau.opa_6m_orderdetails
+(
+  orderid,
+  originfacility,
+  productionfacility,
+  ordertype,
+  datein,
+  enteredby,
+  pannumber,
+  panid,
+  duedate,
+  dateinvoiced,
+  glpostdate,
+  invoicedby,
+  orderdiscountpercent,
+  orderdiscountreason,
+  casestatus,
+  orderfullcharge,
+  orderdiscount,
+  orderremakediscount,
+  ordertotaltax,
+  ordertotalcharge,
+  orderremakeid,
+  orderremakereason,
+  doctorid,
+  patientfirstname,
+  patientlastname,
+  inhousesale,
+  shade,
+  isrush,
+  rushid,
+  rushdescription,
+  inboundcarrier,
+  inboundtrackingnumber,
+  shippingtargetdate,
+  outboundcarrier,
+  outboundtrackingnumber,
+  shippingaddressline1,
+  shippingaddressline2,
+  shippingaddresscity,
+  shippingaddressstate,
+  shippingaddresszipcode,
+  shippingaddresscountry,
+  maxdaysinlab,
+  labduedate,
+  actualdaysinlab,
+  daysremaining,
+  daysremaininggroup,
+  cod,
+  sourcesystem,
+  sourcesystemscanner,
+  orderitemid,
+  orderitemsequenceid,
+  transactiontype,
+  productid,
+  toothstr,
+  isbridge,
+  isanterior,
+  bodyshade,
+  stumpshade,
+  gingivalshade,
+  incisalshade,
+  quantity,
+  unitprice,
+  discount,
+  remakediscount,
+  totalcharge,
+  totaltax,
+  orderitemremakeid,
+  orderitemremakereason,
+  departmentid,
+  pf_departmentid,
+  pf_productline
+)
+AS 
+ SELECT o.orderid, o.originfacility, o.productionfacility, o.ordertype, o.datein, o.enteredby, o.pannumber, o.panid, o.duedate, o.dateinvoiced, o.glpostdate, o.invoicedby, o.orderdiscountpercent, o.orderdiscountreason, o.casestatus, o.orderfullcharge, o.orderdiscount, o.orderremakediscount, o.ordertotaltax, o.ordertotalcharge, o.orderremakeid, o.orderremakereason, o.doctorid, o.patientfirstname, o.patientlastname, o.inhousesale, o.shade, o.isrush, o.rushid, o.rushdescription, o.inboundcarrier, o.inboundtrackingnumber, o.shippingtargetdate, o.outboundcarrier, o.outboundtrackingnumber, o.shippingaddressline1, o.shippingaddressline2, o.shippingaddresscity, o.shippingaddressstate, o.shippingaddresszipcode, o.shippingaddresscountry, o.maxdaysinlab, o.labduedate, o.actualdaysinlab, COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab AS daysremaining, 
+        CASE
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) < 0 THEN 'Past Due'::character varying
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) = 0 THEN 'Due Today'::character varying
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) = 1 THEN 'Due in 1 Day'::character varying
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) = 2 THEN 'Due in 2 Days'::character varying
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) = 3 THEN 'Due in 3 Days'::character varying
+            WHEN (COALESCE(o.maxdaysinlab, 0) - o.actualdaysinlab) > 3 THEN 'Due in 4+ Days'::character varying
+            ELSE NULL::character varying
+        END AS daysremaininggroup, o.cod, o.sourcesystem, o.sourcesystemscanner, o.orderitemid, o.orderitemsequenceid, o.transactiontype, o.productid, o.toothstr, o.isbridge, o.isanterior, o.bodyshade, o.stumpshade, o.gingivalshade, o.incisalshade, o.quantity, o.unitprice, o.discount, o.remakediscount, o.totalcharge, o.totaltax, o.orderitemremakeid, o.orderitemremakereason, p.departmentid, p.pf_departmentid, p.pf_productline
+   FROM sum.orderdetails_activecases o
+   JOIN dim.products p ON o.productid::text = p.productid::text
+  WHERE o.datein >= (( SELECT getdate() - '6 mons'::interval));
+
+
+GRANT SELECT ON tableau.opa_6m_orderdetails TO _anthonyo;
+GRANT SELECT ON tableau.opa_6m_orderdetails TO _lucy;
+GRANT SELECT ON tableau.opa_6m_orderdetails TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_6m_orderdetails TO cloudbeam;
+GRANT SELECT ON tableau.opa_6m_orderdetails TO _ops;
+
+
+COMMIT;

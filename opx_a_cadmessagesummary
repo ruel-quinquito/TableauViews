@@ -1,0 +1,56 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadmessagesummary
+(
+  orderid,
+  toothnumber,
+  groupid,
+  groupname,
+  hostname,
+  operatorid,
+  begintime,
+  endtime,
+  totaldurationseconds,
+  autoproposal,
+  ordertypeid,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts
+)
+AS 
+ SELECT x.orderid, x.toothnumber, x.groupid, x.groupname, x.hostname, x.operatorid, x.begintime, x.endtime, date_diff('second'::text, x.begintime, x.endtime)::integer AS totaldurationseconds, 
+        CASE
+            WHEN y.orderid IS NOT NULL THEN 1
+            ELSE 0
+        END AS autoproposal, o.ordertypeid, o.doctorid, o.dateinlocaldts, o.dateinvoicedlocaldts
+   FROM ( SELECT m.orderidoriginator AS orderid, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber, m.groupid, m.groupname, m.hostname, m.operatorid, min(m.beginutctime::text)::timestamp without time zone AS begintime, 
+                CASE
+                    WHEN 
+                    CASE
+                        WHEN m.endutctime::text = ''::text THEN NULL::character varying
+                        ELSE m.endutctime
+                    END IS NULL THEN "max"(m.beginutctime::text)::timestamp without time zone
+                    ELSE "max"(
+                    CASE
+                        WHEN m.endutctime::text = ''::text THEN NULL::character varying
+                        ELSE m.endutctime
+                    END::text)::timestamp without time zone
+                END AS endtime
+           FROM cp.fct_cadmessages m
+      LEFT JOIN tableau.opx_a_cadmessagetoothnumber t ON t.messageid = m.messageid
+     WHERE m.groupid::text = '154'::text OR m.groupid::text = '336'::text
+     GROUP BY m.orderidoriginator, m.groupid, m.groupname, m.hostname, m.operatorid, COALESCE(t.toothnumber, '0'::character varying), m.endutctime) x
+   LEFT JOIN ( SELECT DISTINCT m.orderidoriginator AS orderid, m.groupid, COALESCE(t.toothnumber, '0'::character varying) AS toothnumber
+           FROM cp.fct_cadmessages m
+      LEFT JOIN cp.fct_cadmessages_notifications t ON t.messageid = m.messageid AND (t.groupid::text = '154'::text OR t.groupid::text = '336'::text)
+     WHERE (m.groupid::text = '154'::text OR m.groupid::text = '336'::text) AND m.subjectname::text = 'CAD-AutoProposal'::text) y ON y.orderid::text = x.orderid::text AND y.toothnumber::text = x.toothnumber::text AND y.groupid::text = x.groupid::text
+   LEFT JOIN fct."order" o ON o.orderid::character varying::text = x.orderid::text AND o.dateinlocaldts > '2015-11-01 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_a_cadmessagesummary TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_cadmessagesummary TO _etl;
+GRANT SELECT ON tableau.opx_a_cadmessagesummary TO _lucy;
+GRANT SELECT ON tableau.opx_a_cadmessagesummary TO operations;
+GRANT SELECT ON tableau.opx_a_cadmessagesummary TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadmessagesummary TO cloudbeam;
+
+
+COMMIT;

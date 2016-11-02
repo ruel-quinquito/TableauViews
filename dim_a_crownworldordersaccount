@@ -1,0 +1,45 @@
+CREATE OR REPLACE VIEW tableau.dim_a_crownworldordersaccount
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  islocked,
+  orderid,
+  ordertypeid,
+  originfacilityid,
+  originfacility,
+  clientid,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  grosssales,
+  discount,
+  totaltax,
+  netsales,
+  totalcharge,
+  maxdaysinlab,
+  labduelocaldts,
+  actualdaysinlab,
+  isdigitalorder,
+  isreturn,
+  istestaccount,
+  accounttype,
+  inhouseaccount
+)
+AS 
+ SELECT eo.recordinsertedlocaldts, eo.recordmodifiedlocaldts, eo.islocked, eo.orderid, eo.ordertypeid, eo.originfacilityid, eo.originfacility, eo.clientid, eo.doctorid, eo.dateinlocaldts, eo.dateinvoicedlocaldts, eo.grosssales, eo.discount, eo.totaltax, eo.netsales, eo.totalcharge, eo.maxdaysinlab, eo.labduelocaldts, eo.actualdaysinlab, eo.isdigitalorder, eo.isreturn, acw.istestaccount, acw.accounttype, acw.inhouseaccount
+   FROM cal.elektraorder eo
+   LEFT JOIN ( SELECT ac.recordinsertedlocaldts, ac.recordmodifiedlocaldts, ac.messageid, ac.messagesource, ac.prospect, ac.deleted, ac.accountclosed, ac.active, ac.isowner, ac.istestaccount, ac.accounttype, ac.accountid, ac.licensenumber, ac.licensestate, ac.accountname, ac.firstname, ac.lastname, ac.address1, ac.city, ac.state, ac.zipcode, ac.country, ac.workphone, ac.faxphone, ac.mobilephone, ac.email, ac.practiceid, ac.practicename, ac.labid, ac.labname, ac.groupid, ac.groupname, ac.firstentrydate, ac.modifieddate, ac.inhouseaccount
+           FROM dim.accountscrownworld ac
+      JOIN ( SELECT DISTINCT ac.accountid, "max"(ac.modifieddate) AS maxmodifieddate, "max"(ac.messageid) AS maxmessageid
+                   FROM dim.accountscrownworld ac
+                  GROUP BY ac.accountid) x ON ac.accountid::text = x.accountid::text AND ac.modifieddate = x.maxmodifieddate AND ac.messageid = x.maxmessageid) acw ON eo.doctorid::text = acw.accountid::text
+  WHERE eo.originfacilityid = 100 OR eo.originfacilityid = 101;
+
+
+GRANT SELECT ON tableau.dim_a_crownworldordersaccount TO _anthonyo;
+GRANT SELECT ON tableau.dim_a_crownworldordersaccount TO _lucy;
+GRANT SELECT ON tableau.dim_a_crownworldordersaccount TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.dim_a_crownworldordersaccount TO cloudbeam;
+
+
+COMMIT;

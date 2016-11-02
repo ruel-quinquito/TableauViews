@@ -1,0 +1,50 @@
+CREATE OR REPLACE VIEW tableau.opx_a_prkorderdetails
+(
+  originfacilityid,
+  originfacility,
+  orderid,
+  ordertypeid,
+  ordertype,
+  dateinlocaldts,
+  enteredby,
+  duedatelocaldts,
+  dateinvoicedlocaldts,
+  postdatelocaldts,
+  invoicedby,
+  linkto,
+  doctorid,
+  inhousesale,
+  orderproductid,
+  productorder,
+  productionfacilityid,
+  productionfacility,
+  transactiontype,
+  productid,
+  quantity,
+  unitprice,
+  discount,
+  totaltax,
+  totalcharge,
+  remakeid,
+  reasonid,
+  remakereason,
+  isbackorder,
+  fullfilled,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype
+)
+AS 
+ SELECT o.originfacilityid, o.originfacility, o.orderid, o.ordertypeid, o.ordertype, o.dateinlocaldts, o.enteredby, o.duedatelocaldts, o.dateinvoicedlocaldts, o.postdatelocaldts, o.invoicedby, o.linkto, o.doctorid, o.inhousesale, oi.orderproductid, oi.productorder, oi.productionfacilityid, oi.productionfacility, oi.transactiontype, oi.productid, oi.quantity, oi.unitprice, oi.discount, oi.totaltax, oi.totalcharge, oi.remakeid, oi.reasonid, oi.remakereason, o.isbackorder, oi.fullfilled, p.pf_productgroup, p.pf_productline, p.pf_producttype
+   FROM fct.prkorder o
+   JOIN fct.prkorderitem oi ON oi.orderid = o.orderid
+   LEFT JOIN dim.products p ON oi.productid::text = p.productid::text;
+
+
+GRANT SELECT ON tableau.opx_a_prkorderdetails TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_prkorderdetails TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_prkorderdetails TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_prkorderdetails TO _ops;
+
+
+COMMIT;

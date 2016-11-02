@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign_dev
+(
+  orderidoriginator,
+  orderid,
+  teethnumber,
+  orderid_teeth,
+  operatorid,
+  workflowstep,
+  begindate,
+  enddate,
+  duration_in_seconds,
+  queuetime,
+  groupid,
+  groupname,
+  rejection_reasoncode,
+  rejection_reason,
+  systemname,
+  material_brand,
+  material_provider
+)
+AS 
+ SELECT scandesign_dev.orderidoriginator, scandesign_dev.orderid, scandesign_dev.teethnumber, scandesign_dev.orderid_teeth, scandesign_dev.operatorid, scandesign_dev.noticedataobjectworkflowstep AS workflowstep, scandesign_dev.begindate, scandesign_dev.enddate, scandesign_dev.noticedataobjectdurationseconds AS duration_in_seconds, scandesign_dev.queuetime, scandesign_dev.logininfogroupid AS groupid, scandesign_dev.logininfogroupname AS groupname, scandesign_dev.caserejectionreasonscode AS rejection_reasoncode, scandesign_dev.caserejectionreasonsreason AS rejection_reason, scandesign_dev.systemname, scandesign_dev.materialbrand AS material_brand, scandesign_dev.materialidprovider AS material_provider
+   FROM sum.scandesign_dev
+  ORDER BY scandesign_dev.orderid_teeth, scandesign_dev.begindate, scandesign_dev.messageid;
+
+
+GRANT SELECT ON tableau.opx_a_cadscandesign_dev TO _benv;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign_dev TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign_dev TO _malcolm;
+
+
+COMMIT;

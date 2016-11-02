@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.sli_since2013_byperformanceforecast
+(
+  orderid,
+  externalorderid,
+  originfacilityid,
+  doctorid,
+  country,
+  shippingcountry,
+  dateinvoiced,
+  productid,
+  productdescription,
+  pf_productline,
+  pf_productgroup,
+  pf_quantity,
+  pf_producttype,
+  pf_netsales,
+  inhousesale,
+  pf_isactualunit,
+  internationalsale,
+  shipaddresszipcode,
+  shipaddressstate,
+  territoryid,
+  salespersonid
+)
+AS 
+ SELECT o.orderid, o.externalorderid, pf.originfacilityid, o.doctorid, a.country, a.shippingcountry, pf.dateinvoiced, pf.productid, p.description AS productdescription, pf.pf_productline, pf.pf_productgroup, pf.pf_quantity, pf.pf_producttype, pf.pf_netsales, pf.inhousesale, pf.pf_isactualunit, pf.internationalsale, o.shipaddresszipcode, o.shipaddressstate, a.territoryid, pf.salespersonid
+   FROM cal.performanceforecast pf
+   JOIN fct."order" o ON pf.orderid = o.orderid
+   JOIN dim.accounts a ON pf.doctorid::text = a.accountid::text
+   JOIN dim.products p ON pf.productid::text = p.productid::text
+  WHERE o.dateinvoicedlocaldts >= '2013-01-01 00:00:00'::timestamp without time zone;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sli_since2013_byperformanceforecast TO cloudbeam;
+GRANT SELECT ON tableau.sli_since2013_byperformanceforecast TO operations;
+
+
+COMMIT;

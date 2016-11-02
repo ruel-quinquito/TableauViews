@@ -1,0 +1,63 @@
+CREATE OR REPLACE VIEW tableau.opx_6m_processlocation
+(
+  orderid,
+  processlabellocationid,
+  invoiced,
+  originlocationfacilityid,
+  originlocationbuilding,
+  originlocationdepartment,
+  originlocationzone,
+  originlocationprocess,
+  originlocationprocessdescription,
+  currentlocationfacilityid,
+  currentlocationbuilding,
+  currentlocationdepartment,
+  currentlocationzone,
+  currentlocationprocess,
+  currentlocationprocessdescription,
+  currentlocationcheckindate,
+  currentlocationcheckoutdate,
+  assignmentcount,
+  firstassignedto,
+  firstassignmentstartdate,
+  firstassignmentcompleteddate,
+  lastassignedto,
+  lastassignmentstartdate,
+  lastassignmentcompleteddate,
+  datein,
+  duedate,
+  dateinvoiced,
+  rush,
+  pannumber,
+  panid,
+  maxdaysinlab,
+  labduedate,
+  actualdaysinlab,
+  daysremaining,
+  productfacilityid,
+  productdepartment,
+  productsubdepartment,
+  productline,
+  productid,
+  quantity,
+  daysremaininggroup
+)
+AS 
+ SELECT a.orderid, a.processlabellocationid, 0 AS invoiced, a.originlocationfacilityid, a.originlocationbuilding, a.originlocationdepartment, a.originlocationzone, a.originlocationprocess, a.originlocationprocessdescription, a.currentlocationfacilityid, a.currentlocationbuilding, a.currentlocationdepartment, a.currentlocationzone, a.currentlocationprocess, a.currentlocationprocessdescription, a.currentlocationcheckindate, a.currentlocationcheckoutdate, a.assignmentcount, a.firstassignedto, a.firstassignmentstartdate, a.firstassignmentcompleteddate, a.lastassignedto, a.lastassignmentstartdate, a.lastassignmentcompleteddate, a.datein, a.duedate, a.dateinvoiced, a.rush, a.pannumber, a.panid, a.maxdaysinlab, a.labduedate, a.actualdaysinlab, a.daysremaining, a.productfacilityid, a.productdepartment, a.productsubdepartment, a.productline, a.productid, a.quantity, 
+        CASE
+            WHEN a.daysremaining >= 5 THEN '5+ days'::text
+            WHEN a.daysremaining < 0 THEN 'past due'::text
+            ELSE a.daysremaining::character varying(10)::text + ' days'::text
+        END AS daysremaininggroup
+   FROM sum.caselocation_activecaseslastlocation a
+  WHERE a.datein >= (( SELECT getdate() - '6 mons'::interval))
+UNION 
+ SELECT a.orderid, a.processlabellocationid, 1 AS invoiced, a.originlocationfacilityid, a.originlocationbuilding, a.originlocationdepartment, a.originlocationzone, a.originlocationprocess, a.originlocationprocessdescription, a.currentlocationfacilityid, a.currentlocationbuilding, a.currentlocationdepartment, a.currentlocationzone, a.currentlocationprocess, a.currentlocationprocessdescription, a.currentlocationcheckindate, a.currentlocationcheckoutdate, a.assignmentcount, a.firstassignedto, a.firstassignmentstartdate, a.firstassignmentcompleteddate, a.lastassignedto, a.lastassignmentstartdate, a.lastassignmentcompleteddate, a.datein, a.duedate, a.dateinvoiced, a.rush, a.pannumber, a.panid, a.maxdaysinlab, a.labduedate, a.actualdaysinlab, a.daysremaining, a.productfacilityid, a.productdepartment, a.productsubdepartment, a.productline, a.productid, a.quantity, 
+        CASE
+            WHEN a.daysremaining >= 5 THEN '5+ days'::text
+            WHEN a.daysremaining < 0 THEN 'past due'::text
+            ELSE a.daysremaining::character varying(10)::text + ' days'::text
+        END AS daysremaininggroup
+   FROM sum.caselocation_invoicedtoday a;
+
+COMMIT;

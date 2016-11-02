@@ -1,0 +1,21 @@
+CREATE OR REPLACE VIEW tableau.ops_2m_germanydoctorretention
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  currentdateheading,
+  twomonthslaterdateheading,
+  totalnewcustomers,
+  lostcustomers,
+  retainedcustomers,
+  retentionpercent
+)
+AS 
+ SELECT germanydoctorretentionreport.recordinsertedlocaldts, germanydoctorretentionreport.recordmodifiedlocaldts, germanydoctorretentionreport.currentdateheading, germanydoctorretentionreport.twomonthslaterdateheading, germanydoctorretentionreport.totalnewcustomers, germanydoctorretentionreport.lostcustomers, germanydoctorretentionreport.retainedcustomers, germanydoctorretentionreport.retentionpercent
+   FROM agg.germanydoctorretentionreport;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.ops_2m_germanydoctorretention TO cloudbeam;
+GRANT SELECT ON tableau.ops_2m_germanydoctorretention TO operations;
+
+
+COMMIT;

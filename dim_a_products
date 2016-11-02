@@ -1,0 +1,48 @@
+CREATE OR REPLACE VIEW tableau.dim_a_products
+(
+  source,
+  productid,
+  discontinued,
+  taxable,
+  mdetaxable,
+  description,
+  departmentid,
+  subdepartmentid,
+  remakedepartment,
+  remakecategory,
+  majorgroupid,
+  minorgroupid,
+  marketingmajor,
+  marketingminor,
+  backloggroup,
+  salescategory,
+  unitcountgroup,
+  unitgroupid,
+  implantsystem,
+  implantsystemvendor,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  pf_departmentid,
+  pf_isactualunit,
+  nomodel,
+  bundlequantity,
+  glcategory,
+  satellitecategory,
+  material,
+  daysinlab_10,
+  daysinlab_20,
+  daysinlab_30,
+  daysinlab_40,
+  daysinlab_45,
+  daysinlab_50,
+  daysinlab_51,
+  daysinlab_60,
+  daysinlab_62,
+  metal
+)
+AS 
+ SELECT products.source, products.productid, products.discontinued, products.taxable, products.mdetaxable, products.description, products.departmentid, products.subdepartmentid, products.remakedepartment, products.remakecategory, products.majorgroupid, products.minorgroupid, products.marketingmajor, products.marketingminor, products.backloggroup, products.salescategory, products.unitcountgroup, products.unitgroupid, products.implantsystem, products.implantsystemvendor, products.pf_productgroup, products.pf_productline, products.pf_producttype, products.pf_departmentid, products.pf_isactualunit, products.nomodel, products.bundlequantity, products.glcategory, products.satellitecategory, products.material, products.daysinlab_10, products.daysinlab_20, products.daysinlab_30, products.daysinlab_40, products.daysinlab_45, products.daysinlab_50, products.daysinlab_51, products.daysinlab_60, products.daysinlab_62, products.metal
+   FROM dim.products;
+
+COMMIT;

@@ -1,0 +1,44 @@
+CREATE OR REPLACE VIEW tableau.temp_udxcaddatacatalog_designs
+(
+  msgtype,
+  messagecreateddate,
+  caseid,
+  publicid,
+  id,
+  name,
+  productguid,
+  restorationguid,
+  unitsofmeasurespecified,
+  unitsofmeasure,
+  designdateutcspecified,
+  designfile_teethnumber,
+  designfile_refid,
+  partingline_teethnumber,
+  partingline_refid,
+  minthicknessspecified,
+  minthickness,
+  undercutsremoved_draftanglespecified,
+  undercutsremoved_draftangle,
+  undercutsremoved_donespecified,
+  undercutsremoved_done,
+  toolradiuscompensation_radiusspecified,
+  toolradiuscompensation_radius,
+  toolradiuscompensation_donespecified,
+  toolradiuscompensation_done,
+  externalmarginlines_teethnumber,
+  externalmarginlines_refid,
+  internalmarginlines_teethnumber,
+  internalmarginlines_refid
+)
+AS 
+ SELECT cp_udxcaddatacatalog_designs.msgtype, cp_udxcaddatacatalog_designs.messagecreateddate, cp_udxcaddatacatalog_designs.caseidoriginator AS caseid, cp_udxcaddatacatalog_designs.caseidbroker AS publicid, cp_udxcaddatacatalog_designs.id, cp_udxcaddatacatalog_designs.name, cp_udxcaddatacatalog_designs.productguid, cp_udxcaddatacatalog_designs.restorationguid, cp_udxcaddatacatalog_designs.unitsofmeasurespecified, cp_udxcaddatacatalog_designs.unitsofmeasure, cp_udxcaddatacatalog_designs.designdateutcspecified, cp_udxcaddatacatalog_designs.designfile_teethnumber, cp_udxcaddatacatalog_designs.designfile_refid, cp_udxcaddatacatalog_designs.partingline_teethnumber, cp_udxcaddatacatalog_designs.partingline_refid, cp_udxcaddatacatalog_designs.minthicknessspecified, cp_udxcaddatacatalog_designs.minthickness, cp_udxcaddatacatalog_designs.undercutsremoved_draftanglespecified, cp_udxcaddatacatalog_designs.undercutsremoved_draftangle, cp_udxcaddatacatalog_designs.undercutsremoved_donespecified, cp_udxcaddatacatalog_designs.undercutsremoved_done, cp_udxcaddatacatalog_designs.toolradiuscompensation_radiusspecified, cp_udxcaddatacatalog_designs.toolradiuscompensation_radius, cp_udxcaddatacatalog_designs.toolradiuscompensation_donespecified, cp_udxcaddatacatalog_designs.toolradiuscompensation_done, cp_udxcaddatacatalog_designs.externalmarginlines_teethnumber, cp_udxcaddatacatalog_designs.externalmarginlines_refid, cp_udxcaddatacatalog_designs.internalmarginlines_teethnumber, cp_udxcaddatacatalog_designs.internalmarginlines_refid
+   FROM import.cp_udxcaddatacatalog_designs;
+
+
+GRANT SELECT ON tableau.temp_udxcaddatacatalog_designs TO operations;
+GRANT SELECT ON tableau.temp_udxcaddatacatalog_designs TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.temp_udxcaddatacatalog_designs TO cloudbeam;
+GRANT SELECT ON tableau.temp_udxcaddatacatalog_designs TO _ops;
+
+
+COMMIT;

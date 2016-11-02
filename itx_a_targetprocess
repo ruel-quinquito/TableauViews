@@ -1,0 +1,44 @@
+CREATE OR REPLACE VIEW tableau.itx_a_targetprocess
+(
+  id,
+  eventdate,
+  storyid,
+  taskid,
+  storyname,
+  taskname,
+  employeeid,
+  firstname,
+  lastname,
+  company,
+  location,
+  division,
+  position,
+  workrulename,
+  paycodename,
+  totalworktimeinseconds,
+  totalworktime,
+  status,
+  timespent,
+  assignmenteffort,
+  storycompleteddate,
+  featureid,
+  featuredescription,
+  sprintid,
+  sprintdescription,
+  epicid,
+  epicdescription,
+  recordmodifiedlocaldts,
+  recordcreatedlocaldts
+)
+AS 
+ SELECT targetprocessworkhours.id, targetprocessworkhours.eventdate, targetprocessworkhours.storyid, targetprocessworkhours.taskid, targetprocessworkhours.storyname, targetprocessworkhours.taskname, targetprocessworkhours.employeeid, targetprocessworkhours.firstname, targetprocessworkhours.lastname, targetprocessworkhours.company, targetprocessworkhours."location", targetprocessworkhours.division, targetprocessworkhours."position", targetprocessworkhours.workrulename, targetprocessworkhours.paycodename, targetprocessworkhours.totalworktimeinseconds, targetprocessworkhours.totalworktime, targetprocessworkhours.status, targetprocessworkhours.timespent, targetprocessworkhours.assignmenteffort, targetprocessworkhours.storycompleteddate, targetprocessworkhours.featureid, targetprocessworkhours.featuredescription, targetprocessworkhours.sprintid, targetprocessworkhours.sprintdescription, targetprocessworkhours.epicid, targetprocessworkhours.epicdescription, targetprocessworkhours.recordmodifiedlocaldts, targetprocessworkhours.recordcreatedlocaldts
+   FROM cal.targetprocessworkhours;
+
+
+GRANT SELECT ON tableau.itx_a_targetprocess TO _anthonyo;
+GRANT SELECT ON tableau.itx_a_targetprocess TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.itx_a_targetprocess TO cloudbeam;
+GRANT SELECT ON tableau.itx_a_targetprocess TO _ops;
+
+
+COMMIT;

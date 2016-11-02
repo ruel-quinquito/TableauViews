@@ -1,0 +1,57 @@
+CREATE OR REPLACE VIEW tableau.sls_2y_ordersbydateinvoiced
+(
+  orderid,
+  orderproductid,
+  doctorid,
+  practicename,
+  groupid,
+  city,
+  billcity,
+  billstate,
+  territoryid,
+  istestdoctor,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  ordertype,
+  originfacility,
+  postdatelocaldts,
+  isanterior,
+  isbridge,
+  quantity,
+  productionfacility,
+  discount,
+  totalcharge,
+  totaltax,
+  productid,
+  pf_departmentid,
+  pf_productgroup,
+  pf_productline,
+  pf_isactualunit,
+  salescategory,
+  glcategory,
+  satellitecategory,
+  daysworkedcurrent,
+  daysworkedprev,
+  departmentid,
+  bundlequantity,
+  enteredby,
+  shipouttrackingnumber,
+  remakedepartment,
+  remakecategory
+)
+AS 
+ SELECT orders2yearsdateinvoiced.orderid, orders2yearsdateinvoiced.orderproductid, orders2yearsdateinvoiced.doctorid, orders2yearsdateinvoiced.practicename, orders2yearsdateinvoiced.groupid, orders2yearsdateinvoiced.city, orders2yearsdateinvoiced.billcity, orders2yearsdateinvoiced.billstate, orders2yearsdateinvoiced.territoryid, orders2yearsdateinvoiced.istestdoctor, orders2yearsdateinvoiced.dateinlocaldts, orders2yearsdateinvoiced.dateinvoicedlocaldts, orders2yearsdateinvoiced.ordertype, orders2yearsdateinvoiced.originfacility, orders2yearsdateinvoiced.postdatelocaldts, orders2yearsdateinvoiced.isanterior, orders2yearsdateinvoiced.isbridge, orders2yearsdateinvoiced.quantity, orders2yearsdateinvoiced.productionfacility, orders2yearsdateinvoiced.discount, orders2yearsdateinvoiced.totalcharge, orders2yearsdateinvoiced.totaltax, orders2yearsdateinvoiced.productid, orders2yearsdateinvoiced.pf_departmentid, orders2yearsdateinvoiced.pf_productgroup, orders2yearsdateinvoiced.pf_productline, orders2yearsdateinvoiced.pf_isactualunit, orders2yearsdateinvoiced.salescategory, orders2yearsdateinvoiced.glcategory, orders2yearsdateinvoiced.satellitecategory, orders2yearsdateinvoiced.daysworkedcurrent, orders2yearsdateinvoiced.daysworkedprev, orders2yearsdateinvoiced.departmentid, orders2yearsdateinvoiced.bundlequantity, orders2yearsdateinvoiced.enteredby, orders2yearsdateinvoiced.shipouttrackingnumber, orders2yearsdateinvoiced.remakedepartment, orders2yearsdateinvoiced.remakecategory
+   FROM sum.orders2yearsdateinvoiced;
+
+
+GRANT SELECT ON tableau.sls_2y_ordersbydateinvoiced TO _jeffreyd;
+GRANT UPDATE, REFERENCES, DELETE, RULE, TRIGGER, SELECT, INSERT ON tableau.sls_2y_ordersbydateinvoiced TO executive;
+GRANT DELETE, TRIGGER, RULE, UPDATE, SELECT, REFERENCES, INSERT ON tableau.sls_2y_ordersbydateinvoiced TO operations;
+GRANT REFERENCES, DELETE, RULE, SELECT, UPDATE, TRIGGER, INSERT ON tableau.sls_2y_ordersbydateinvoiced TO _exec;
+GRANT RULE, SELECT, DELETE, REFERENCES, INSERT, TRIGGER, UPDATE ON tableau.sls_2y_ordersbydateinvoiced TO _ops;
+GRANT SELECT ON tableau.sls_2y_ordersbydateinvoiced TO _anthonyo;
+GRANT SELECT ON tableau.sls_2y_ordersbydateinvoiced TO _lucy;
+GRANT DELETE, REFERENCES, INSERT, TRIGGER, SELECT, UPDATE, RULE ON tableau.sls_2y_ordersbydateinvoiced TO cloudbeam;
+
+
+COMMIT;

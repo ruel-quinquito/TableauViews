@@ -1,0 +1,18 @@
+CREATE OR REPLACE VIEW tableau.opx_a_prksalesdistribution
+(
+  accountid,
+  accountname,
+  country,
+  originfacilityid,
+  productionfacilityid,
+  yearinvoiced,
+  monthinvoiced,
+  pf_netsales
+)
+AS 
+ SELECT a.accountid, a.accountname, a.country, pf.originfacilityid, pf.productionfacilityid, pf.yearinvoiced, pf.monthinvoiced, pf.pf_netsales
+   FROM cal.performanceforecast pf
+   LEFT JOIN dim.accounts a ON pf.doctorid::text = a.accountid::text
+  WHERE (pf.yearinvoiced = "date_part"('year'::text, 'now'::text::date) OR pf.yearinvoiced = ("date_part"('year'::text, 'now'::text::date) - 1)) AND a.accounttype::text = 'Distributor'::text;
+
+COMMIT;

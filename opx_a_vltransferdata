@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.opx_a_vltransferdata
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  transferfilename,
+  transfersequence,
+  transferfrom,
+  transferid,
+  transferorigfiledate,
+  transferfromhost,
+  transferfrommailbox,
+  transferstartdate,
+  transferenddate,
+  transfertimeinms,
+  returnstatus,
+  turnaroundtimeinminutes,
+  returnfrom,
+  returntransferid,
+  returnorigfiledate,
+  returnfromhost,
+  returnfrommailbox,
+  returnstartdate,
+  returnenddate,
+  returntimeinms
+)
+AS 
+ SELECT vltransferdata.recordinsertedlocaldts, COALESCE(vltransferdata.recordmodifiedlocaldts, vltransferdata.recordinsertedlocaldts) AS recordmodifiedlocaldts, vltransferdata.transferfilename, vltransferdata.transfersequence, vltransferdata.transferfrom, vltransferdata.transferid, vltransferdata.transferorigfiledate, vltransferdata.transferfromhost, vltransferdata.transferfrommailbox, vltransferdata.transferstartdate, vltransferdata.transferenddate, vltransferdata.transfertimeinms, vltransferdata.returnstatus, vltransferdata.turnaroundtimeinminutes, vltransferdata.returnfrom, vltransferdata.returntransferid, vltransferdata.returnorigfiledate, vltransferdata.returnfromhost, vltransferdata.returnfrommailbox, vltransferdata.returnstartdate, vltransferdata.returnenddate, vltransferdata.returntimeinms
+   FROM fct.vltransferdata;
+
+
+GRANT SELECT ON tableau.opx_a_vltransferdata TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_vltransferdata TO _lucy;
+GRANT REFERENCES, DELETE, RULE, SELECT, UPDATE, TRIGGER, INSERT ON tableau.opx_a_vltransferdata TO _exec;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_a_vltransferdata TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opx_a_vltransferdata TO _ops;
+
+
+COMMIT;

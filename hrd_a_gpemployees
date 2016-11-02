@@ -1,0 +1,46 @@
+CREATE OR REPLACE VIEW tableau.hrd_a_gpemployees
+(
+  employeeid,
+  employeename,
+  workshiftcurrent,
+  direct_indirect,
+  hrstatus,
+  company,
+  divisionid,
+  division_description,
+  locationid,
+  facilityid,
+  dlplus_facilityid,
+  buildingname,
+  adjustedhiredate,
+  inactivedate,
+  reason,
+  supervisorname,
+  supervisoremployeeid
+)
+AS 
+ SELECT gpe.employeeid, gpe.lastname::text + ', '::text + gpe.firstname::text AS employeename, upper(gpe.workshiftcurrent::text) AS workshiftcurrent, 
+        CASE
+            WHEN gpe.isdirectlaborcurrent::text = 1::text THEN 'DIRECT'::text
+            WHEN gpe.isdirectlaborcurrent::text = 0::text THEN 'INDIRECT'::text
+            ELSE NULL::text
+        END AS direct_indirect, 
+        CASE
+            WHEN gpe.hrstatus IS NULL THEN 'INACTIVE'::text
+            ELSE upper(gpe.hrstatus::text)
+        END AS hrstatus, gpe.gpdb AS company, gpe.divisionid, gpe.divisiongpdescription AS division_description, gpe.locationid, gpe.facilityid, gpe.dlplusfacilityid AS dlplus_facilityid, upper(gpe.buildingnamegp::text) AS buildingname, gpe.adjustedhiredate, gpe.inactivedate, rsn.changereason AS reason, ( SELECT gpemployee.lastname::text + ', '::text + gpemployee.firstname::text
+           FROM fct.gpemployee
+          WHERE gpemployee.employeeid::text = gpe.supervisoremployeeid::text
+         LIMIT 1) AS supervisorname, 
+        CASE
+            WHEN gpe.supervisoremployeeid::text = ''::text THEN NULL::character varying
+            ELSE gpe.supervisoremployeeid
+        END AS supervisoremployeeid
+   FROM fct.gpemployee gpe
+   LEFT JOIN ( SELECT fct_gpemployeestatushistory.employeeid, upper(fct_gpemployeestatushistory.changereason::text) AS changereason, "max"(fct_gpemployeestatushistory.recordinsertedlocaldts) AS maxdate
+           FROM hr.fct_gpemployeestatushistory
+          WHERE fct_gpemployeestatushistory.recordsequence = 1
+          GROUP BY fct_gpemployeestatushistory.employeeid, fct_gpemployeestatushistory.changereason) rsn ON gpe.employeeid::text = rsn.employeeid::text
+  WHERE gpe.recordsequence = 1 AND gpe.isrecordinactive = 0 AND (gpe.hrstatus::text = 'Active'::text OR gpe.hrstatus::text = 'Family Leave'::text OR gpe.hrstatus::text = 'Leave of Absence'::text OR gpe.hrstatus::text = 'Maternity'::text);
+
+COMMIT;

@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.opx_a_internalpackagetracking
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  packagetrackingid,
+  packagenumber,
+  packagetype,
+  transporttype,
+  deliverytype,
+  technicianid,
+  technician,
+  packageseqid,
+  pickupbatch,
+  pickupcontainername,
+  pickupscanlocaldts,
+  pickuplocation,
+  pickupsignedlocaldts,
+  pickupsignedby,
+  deliverybatch,
+  deliverycontainername,
+  deliveryscanlocaldts,
+  deliverylocation,
+  deliverysignedlocaldts,
+  deliverysignedby
+)
+AS 
+ SELECT pt.recordinsertedlocaldts, COALESCE(pt.recordmodifiedlocaldts, pt.recordinsertedlocaldts) AS recordmodifiedlocaldts, pt.packagetrackingid, pt.packagenumber, pt.packagetype, pt.transporttype, pt.deliverytype, pt.technicianid, pt.technician, pt.packageseqid, pt.pickupbatch, pt.pickupcontainername, pt.pickupscanlocaldts, pt.pickuplocation, pt.pickupsignedlocaldts, pt.pickupsignedby, pt.deliverybatch, pt.deliverycontainername, pt.deliveryscanlocaldts, pt.deliverylocation, pt.deliverysignedlocaldts, pt.deliverysignedby
+   FROM fct.packagetracking pt;
+
+
+GRANT SELECT ON tableau.opx_a_internalpackagetracking TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_internalpackagetracking TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opx_a_internalpackagetracking TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_a_internalpackagetracking TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opx_a_internalpackagetracking TO _ops;
+
+
+COMMIT;

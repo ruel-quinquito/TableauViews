@@ -1,0 +1,48 @@
+CREATE OR REPLACE VIEW tableau.opx_a_keymetricsorder
+(
+  orderid,
+  ordertypeid,
+  transactiontype,
+  originfacilityid,
+  originfacility,
+  doctorid,
+  clientid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  grosssales,
+  discount,
+  totaltax,
+  netsales,
+  totalcharge,
+  maxdaysinlab,
+  labduelocaldts,
+  actualdaysinlab,
+  isreturn,
+  inhouseaccount
+)
+AS 
+ SELECT eo.orderid::character varying(255) AS orderid, eo.ordertypeid::integer AS ordertypeid, NULL::"unknown" AS transactiontype, eo.originfacilityid::integer AS originfacilityid, eo.originfacility, eo.doctorid, eo.clientid, eo.dateinlocaldts, eo.dateinvoicedlocaldts, eo.grosssales, eo.discount, eo.totaltax, eo.netsales, eo.totalcharge, eo.maxdaysinlab, eo.labduelocaldts, eo.actualdaysinlab, COALESCE(eo.isreturn, '0'::character varying)::character varying(20) AS isreturn, COALESCE(ac.inhouseaccount, 0)::character varying(20) AS inhouseaccount
+   FROM cal.elektraorder eo
+   LEFT JOIN dim.accounts ac ON ('10-'::character varying::text + eo.doctorid::text) = ac.accountid::text
+  WHERE eo.originfacilityid = 65 OR eo.originfacilityid >= 100
+UNION 
+ SELECT ordergermany.orderid::character varying(255) AS orderid, ordergermany.ordertypeid::integer AS ordertypeid, ordergermany.ordertype AS transactiontype, ordergermany.originfacilityid::integer AS originfacilityid, ordergermany.originfacility::character varying(60) AS originfacility, ordergermany.doctorid, ordergermany.doctorid AS clientid, ordergermany.dateinlocaldts, ordergermany.dateinvoicedlocaldts, ordergermany.fullcharge::numeric(18,0) AS grosssales, ordergermany.discount::numeric(18,0) AS discount, ordergermany.totaltax::numeric(18,0) AS totaltax, COALESCE(ordergermany.fullcharge, 0::numeric::numeric(18,0)) + COALESCE(ordergermany.discount, 0::numeric::numeric(18,0)) + COALESCE(ordergermany.remakediscount, 0::numeric::numeric(18,0))::numeric(18,0) AS netsales, COALESCE(ordergermany.totalcharge, 0::numeric::numeric(18,0))::numeric(18,0) AS totalcharge, NULL::"unknown" AS maxdaysinlab, NULL::"unknown" AS labduelocaldts, date_diff('day'::character varying::text, ordergermany.dateinlocaldts, ordergermany.dateinvoicedlocaldts)::integer AS actualdaysinlab, 
+        CASE
+            WHEN ordergermany.ordertype::text = 'Remake'::character varying::text OR ordergermany.ordertype::text = 'Adjust'::character varying::text OR ordergermany.ordertype::text = 'CRD'::character varying::text OR ordergermany.ordertype::text = 'Credit'::character varying::text THEN '1'::character varying
+            ELSE '0'::character varying
+        END::character varying(20) AS isreturn, 
+        CASE
+            WHEN ordergermany.gegsource::text = 'Datext'::character varying::text THEN '0'::character varying
+            ELSE '1'::character varying
+        END::character varying(20) AS inhouseaccount
+   FROM fct.ordergermany
+  WHERE ordergermany.originfacilityid = 80::smallint;
+
+
+GRANT SELECT ON tableau.opx_a_keymetricsorder TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_keymetricsorder TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_keymetricsorder TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_keymetricsorder TO _ops;
+
+
+COMMIT;

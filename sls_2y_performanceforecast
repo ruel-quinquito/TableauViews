@@ -1,0 +1,42 @@
+CREATE OR REPLACE VIEW tableau.sls_2y_performanceforecast
+(
+  forecastyear,
+  datatype,
+  monthno,
+  monthabbr,
+  salestype,
+  facilityid,
+  facilityalias,
+  departmentid,
+  productline,
+  producttype,
+  category,
+  workdays,
+  daysworked,
+  empcountbyfacility,
+  unitsin,
+  unitsinvoiced,
+  netsales
+)
+AS 
+( SELECT pf.forecastyear, 'Forecast' AS datatype, pf.monthno, pf.monthabbr, pf.salestype, pf.facilityid, pf.facilityalias, pf.departmentid, pf.productline, pf.producttype, pf.category, pf.workdayscurrent AS workdays, NULL::integer AS daysworked, NULL::integer AS empcountbyfacility, NULL::integer AS unitsin, pf.forecastunits AS unitsinvoiced, pf.forecastnetsales AS netsales
+   FROM sum.performanceforecast pf
+  WHERE pf.forecastyear::character varying::text >= (( SELECT getdate() - '2 years'::interval))::character varying::text
+UNION 
+ SELECT pf.forecastyear, 'CurrentYear' AS datatype, pf.monthno, pf.monthabbr, pf.salestype, pf.facilityid, pf.facilityalias, pf.departmentid, pf.productline, pf.producttype, pf.category, pf.workdayscurrent AS workdays, pf.daysworkedcurrent AS daysworked, pf.curyearempcountbyfacility AS empcountbyfacility, pf.curyearunitsin AS unitsin, pf.curyearunitsinvoiced AS unitsinvoiced, pf.curyearnetsales AS netsales
+   FROM sum.performanceforecast pf
+  WHERE pf.forecastyear::character varying::text >= (( SELECT getdate() - '2 years'::interval))::character varying::text)
+UNION 
+ SELECT pf.forecastyear, 'PreviousYear' AS datatype, pf.monthno, pf.monthabbr, pf.salestype, pf.facilityid, pf.facilityalias, pf.departmentid, pf.productline, pf.producttype, pf.category, pf.workdaysprev AS workdays, pf.daysworkedprev AS daysworked, pf.prvyearempcountbyfacility AS empcountbyfacility, pf.prvyearunitsin AS unitsin, pf.prvyearunitsinvoiced AS unitsinvoiced, pf.prvyearnetsales AS netsales
+   FROM sum.performanceforecast pf
+  WHERE pf.forecastyear::character varying::text >= (( SELECT getdate() - '2 years'::interval))::character varying::text;
+
+
+GRANT SELECT ON tableau.sls_2y_performanceforecast TO _anthonyo;
+GRANT SELECT ON tableau.sls_2y_performanceforecast TO _lucy;
+GRANT SELECT ON tableau.sls_2y_performanceforecast TO _tableau;
+GRANT SELECT ON tableau.sls_2y_performanceforecast TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_2y_performanceforecast TO cloudbeam;
+
+
+COMMIT;

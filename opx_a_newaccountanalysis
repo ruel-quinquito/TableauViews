@@ -1,0 +1,44 @@
+CREATE OR REPLACE VIEW tableau.opx_a_newaccountanalysis
+(
+  doctorid,
+  firstname,
+  lastname,
+  state,
+  istestdoctor,
+  orderid,
+  dateinlocaldts,
+  totalcharge,
+  totaltax,
+  productid,
+  pf_productline,
+  pf_productgroup,
+  originfacilityid,
+  labfirst,
+  labrestart,
+  labrestartseqid,
+  lablastinvoiced,
+  lablastin
+)
+AS 
+ SELECT d.doctorid, d.firstname, d.lastname, d.state, d.istestdoctor, o.orderid, o.dateinlocaldts, o.totalcharge, o.totaltax, p.productid, p.pf_productline, p.pf_productgroup, s.originfacilityid, s.labfirst, s.labrestart, s.labrestartseqid, s.lablastinvoiced, s.lablastin
+   FROM ( SELECT a.doctorid, a.orderid, a.productid, a.dateinlocaldts, pg_catalog.row_number()
+          OVER( 
+          PARTITION BY a.doctorid
+          ORDER BY a.dateinlocaldts) AS row_num
+           FROM cal.accountstatusbyproductgroup a
+          WHERE a.accountproductgroupstatusseqid = 1) a
+   LEFT JOIN dim.doctors d ON a.doctorid::text = d.doctorid::text
+   LEFT JOIN fct."order" o ON a.orderid::text = o.orderid::text
+   LEFT JOIN dim.products p ON a.productid::text = p.productid::text
+   LEFT JOIN cal.accountstatusbylab s ON a.doctorid::text = s.doctorid::text AND a.orderid::text = s.orderid::text
+  WHERE a.row_num = 1;
+
+
+GRANT SELECT ON tableau.opx_a_newaccountanalysis TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_newaccountanalysis TO executive;
+GRANT SELECT ON tableau.opx_a_newaccountanalysis TO _lucy;
+GRANT SELECT ON tableau.opx_a_newaccountanalysis TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_newaccountanalysis TO cloudbeam;
+
+
+COMMIT;

@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opi_a_osdesigns
+(
+  orderid,
+  ordertypeid,
+  ordertype,
+  doctorid,
+  labname,
+  datein,
+  dateinvoiced,
+  glpostdate,
+  productid,
+  toothstr,
+  quantity,
+  unitprice,
+  discount,
+  remakediscount,
+  totalcharge,
+  totaltax
+)
+AS 
+ SELECT o.orderid, o.ordertypeid, o.ordertype, o.doctorid, 
+        CASE
+            WHEN o.doctorid::text = '10-318241'::text THEN 'Albensi Dental Lab'::text
+            WHEN o.doctorid::text = '10-1515730'::text THEN 'Maverick Dental Lab'::text
+            ELSE NULL::text
+        END AS labname, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts AS dateinvoiced, o.postdatelocaldts AS glpostdate, oi.productid, oi.toothstr, oi.quantity, oi.unitprice, oi.discount, oi.remakediscount, oi.totalcharge, oi.totaltax
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid AND upper(oi.productid::text) = 'OSDESIGN'::text
+  WHERE o.ordertypeid <> 4 AND (o.doctorid::text = '10-318241'::text OR o.doctorid::text = '10-1515730'::text) AND o.dateinvoicedlocaldts IS NOT NULL;
+
+COMMIT;

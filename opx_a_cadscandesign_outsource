@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign_outsource
+(
+  orderidoriginator,
+  orderid,
+  teethnumber,
+  orderid_teeth,
+  material_brand,
+  material_id_provider,
+  operator_id,
+  operator_groupid,
+  operator_groupname,
+  operator_systemname,
+  workflow_step,
+  workflow_event,
+  workflow_result,
+  workflow_startdatetime,
+  workflow_enddatetime,
+  workflow_duration_in_seconds,
+  quetime_in_seconds,
+  rejection_code,
+  rejection_reason,
+  rejection_reason_type,
+  originating_from_operatorid,
+  originating_from_groupid,
+  originating_from_groupname
+)
+AS 
+ SELECT sd.orderidoriginator, sd.orderid, sd.teethnumber, sd.orderid_teeth, sd.materialbrand AS material_brand, sd.materialidprovider AS material_id_provider, sd.operatorid AS operator_id, sd.logininfogroupid AS operator_groupid, sd.logininfogroupname AS operator_groupname, sd.systemname AS operator_systemname, sd.noticedataobjectworkflowstep AS workflow_step, sd.noticedataobjectevent AS workflow_event, sd.noticedataobjectworkflowstep_mod AS workflow_result, sd.begindate AS workflow_startdatetime, sd.enddate AS workflow_enddatetime, sd.noticedataobjectdurationseconds AS workflow_duration_in_seconds, sd.queuetime AS quetime_in_seconds, sd.caserejectionreasonscode AS rejection_code, sd.caserejectionreasonsreason AS rejection_reason, sd.caserejectionreasonstype AS rejection_reason_type, sd.caserejection_from_operatorid AS originating_from_operatorid, sd.caserejection_from_groupid AS originating_from_groupid, sd.caserejection_from_groupname AS originating_from_groupname
+   FROM sum.scandesign_dev3 sd
+  WHERE sd.logininfogroupid::text = '479'::text OR sd.logininfogroupid::text = '481'::text OR sd.logininfogroupid::text = '494'::text OR sd.logininfogroupid::text = '522'::text OR sd.logininfogroupid::text = '529'::text OR sd.logininfogroupid::text = '545'::text OR sd.logininfogroupid::text = '556'::text OR sd.logininfogroupid::text = '573'::text;
+
+
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource TO _benv;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign_outsource TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign_outsource TO _malcolm;
+
+
+COMMIT;

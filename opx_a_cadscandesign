@@ -1,0 +1,39 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cadscandesign
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  messageid,
+  orderid,
+  teethnumber,
+  orderid_teeth,
+  first_scan_complete_groupid,
+  first_scan_complete_groupname,
+  first_scan_complete_operatorid,
+  first_scan_completedate,
+  end_design_complete_groupid,
+  end_design_complete_groupname,
+  end_design_complete_operatorid,
+  end_design_completedate,
+  turn_around_time_in_seconds,
+  begin_design_open,
+  queue_time_in_seconds_first_time,
+  was_upperjawreductionapplied,
+  was_lowerjawreductionapplied,
+  rejection_count,
+  is_outsourced
+)
+AS 
+ SELECT cad_scandesign_turnaroundtime.recordinsertedlocaldts, cad_scandesign_turnaroundtime.recordmodifiedlocaldts, cad_scandesign_turnaroundtime.messageid, cad_scandesign_turnaroundtime.orderid, cad_scandesign_turnaroundtime.teethnumber, cad_scandesign_turnaroundtime.orderid_teeth, cad_scandesign_turnaroundtime.first_scan_complete_groupid, cad_scandesign_turnaroundtime.first_scan_complete_groupname, cad_scandesign_turnaroundtime.first_scan_complete_operatorid, cad_scandesign_turnaroundtime.first_scan_completedate, cad_scandesign_turnaroundtime.end_design_complete_groupid, cad_scandesign_turnaroundtime.end_design_complete_groupname, cad_scandesign_turnaroundtime.end_design_complete_operatorid, cad_scandesign_turnaroundtime.end_design_completedate, cad_scandesign_turnaroundtime.turn_around_time_in_seconds, cad_scandesign_turnaroundtime.begin_design_open, cad_scandesign_turnaroundtime.queue_time_in_seconds_first_time, cad_scandesign_turnaroundtime.was_upperjawreductionapplied, cad_scandesign_turnaroundtime.was_lowerjawreductionapplied, cad_scandesign_turnaroundtime.rejection_count, 
+        CASE
+            WHEN cad_scandesign_turnaroundtime.end_design_complete_groupid::text = 494::text OR cad_scandesign_turnaroundtime.end_design_complete_groupid::text = 481::text OR cad_scandesign_turnaroundtime.end_design_complete_groupid::text = 479::text OR cad_scandesign_turnaroundtime.end_design_complete_groupid::text = 529::text OR cad_scandesign_turnaroundtime.end_design_complete_groupid::text = 522::text THEN 1
+            ELSE 0
+        END AS is_outsourced
+   FROM sum.cad_scandesign_turnaroundtime;
+
+
+GRANT SELECT ON tableau.opx_a_cadscandesign TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cadscandesign TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_cadscandesign TO _malcolm;
+
+
+COMMIT;

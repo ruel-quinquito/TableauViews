@@ -1,0 +1,43 @@
+CREATE OR REPLACE VIEW tableau.aci_a_mdet
+(
+  accountid,
+  orderid,
+  externalorderid,
+  ordertype,
+  orderproductid,
+  state,
+  country,
+  dateinvoicedlocaldts,
+  postdatelocaldts,
+  originfacilityid,
+  productid,
+  description,
+  quantity,
+  unitprice,
+  totalcharge,
+  totaltax,
+  grosssales,
+  discount,
+  remakediscount,
+  totalmdet,
+  mdetaxable
+)
+AS 
+ SELECT a.accountid, o.orderid, o.externalorderid, o.ordertype, oi.orderproductid, a.state, a.country, o.dateinvoicedlocaldts, o.postdatelocaldts, o.originfacilityid, p.productid, p.description, oi.quantity, oi.unitprice, oi.totalcharge, oi.totaltax, oi.quantity * oi.unitprice AS grosssales, oi.discount, oi.remakediscount, coi.mdetax AS totalmdet, p.mdetaxable
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+   JOIN dim.accounts a ON upper(a.accountid::text) = upper(o.doctorid::text)
+   LEFT JOIN cal.orderitem coi ON o.orderid = coi.orderid AND oi.orderproductid = coi.orderproductid
+  WHERE (coi.mdetax IS NOT NULL OR p.mdetaxable::text = 1::text) AND o.dateinvoicedlocaldts >= '2013-01-01 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.aci_a_mdet TO _tableau;
+GRANT SELECT ON tableau.aci_a_mdet TO _anthonyo;
+GRANT SELECT ON tableau.aci_a_mdet TO _lucy;
+GRANT SELECT ON tableau.aci_a_mdet TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.aci_a_mdet TO cloudbeam;
+GRANT SELECT ON tableau.aci_a_mdet TO _ops;
+
+
+COMMIT;

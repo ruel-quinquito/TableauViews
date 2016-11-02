@@ -1,0 +1,22 @@
+CREATE OR REPLACE VIEW tableau.exs_a_weeklykeyfactorscw
+(
+  facilityid,
+  summarytype,
+  activeaccounts,
+  totalunits,
+  bruxzir,
+  bruxziranterior,
+  emax,
+  thermoform,
+  obsidianpressed,
+  obsidianmetal,
+  reportdate,
+  reporttype,
+  weekstartdate,
+  weekenddate
+)
+AS 
+ SELECT weeklykeyfactorscw.facilityid, weeklykeyfactorscw.summarytype, weeklykeyfactorscw.activeaccounts, weeklykeyfactorscw.totalunits, weeklykeyfactorscw.bruxzir, weeklykeyfactorscw.bruxziranterior, weeklykeyfactorscw.emax, weeklykeyfactorscw.thermoform, weeklykeyfactorscw.obsidianpressed, weeklykeyfactorscw.obsidianmetal, weeklykeyfactorscw.reportdate, weeklykeyfactorscw.reporttype, date_trunc('week'::text, 'now'::text::date::timestamp without time zone) - 2::bigint AS weekstartdate, date_trunc('week'::text, 'now'::text::date::timestamp without time zone) + 4::bigint AS weekenddate
+   FROM sum.weeklykeyfactorscw;
+
+COMMIT;

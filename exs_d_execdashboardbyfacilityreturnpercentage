@@ -1,0 +1,66 @@
+CREATE OR REPLACE VIEW tableau.exs_d_execdashboardbyfacilityreturnpercentage
+(
+  facilityid,
+  returnrate,
+  maxreturnrate
+)
+AS 
+ SELECT rr.facilityid, rr.returnrate, ( SELECT "max"(r1.returnrate) AS "max"
+           FROM ( SELECT tr.productionfacility AS facilityid, "ts".totalqty AS totalsold, tr.totalqty AS totalreturn, (tr.totalqty::double precision / "ts".totalqty)::numeric(11,5) AS returnrate
+                   FROM ( SELECT t.productionfacility, sum(t.quantity) AS totalqty
+                           FROM ( SELECT DISTINCT o.orderid, oi.productionfacility, oi.quantity::double precision AS quantity
+                                   FROM fct."order" o
+                              LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                         LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+                        WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '30 days'::interval) AND oi.remakeid IS NULL AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND o.ordertypeid = 0) t
+                          GROUP BY t.productionfacility) "ts"
+              LEFT JOIN ( SELECT r.productionfacility, sum(r.quantity)::smallint AS totalqty
+                           FROM ( SELECT DISTINCT o.orderid, 
+                                        CASE
+                                            WHEN oi.productionfacility::text = '20-BDL'::text THEN '10-GDL'::character varying
+                                            ELSE oi.productionfacility
+                                        END AS productionfacility, oi.quantity
+                                   FROM fct."order" o
+                              JOIN ( SELECT DISTINCT o.orderid, oi.productionfacility, oi.quantity::double precision AS quantity
+                                           FROM fct."order" o
+                                      LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                                 LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+                                WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '30 days'::interval) AND oi.remakeid IS NULL AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND o.ordertypeid = 0) su ON o.remakeof = su.orderid
+                         LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                    LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+                   WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '1 day'::interval) AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND (o.ordertypeid = 0 AND oi.remakeid::text > ''::character varying::text OR o.ordertypeid = 1 AND oi.isforsurcharge::text = 1::character varying::text)) r
+                          GROUP BY r.productionfacility) tr ON "ts".productionfacility::text = tr.productionfacility::text
+             GROUP BY tr.productionfacility, "ts".totalqty, tr.totalqty) r1) AS maxreturnrate
+   FROM ( SELECT tr.productionfacility AS facilityid, "ts".totalqty AS totalsold, tr.totalqty AS totalreturn, (tr.totalqty::double precision / "ts".totalqty)::numeric(11,5) AS returnrate
+           FROM ( SELECT t.productionfacility, sum(t.quantity) AS totalqty
+                   FROM ( SELECT DISTINCT o.orderid, oi.productionfacility, oi.quantity::double precision AS quantity
+                           FROM fct."order" o
+                      LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                 LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+                WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '30 days'::interval) AND oi.remakeid IS NULL AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND o.ordertypeid = 0) t
+                  GROUP BY t.productionfacility) "ts"
+      LEFT JOIN ( SELECT r.productionfacility, sum(r.quantity)::smallint AS totalqty
+                   FROM ( SELECT DISTINCT o.orderid, 
+                                CASE
+                                    WHEN oi.productionfacility::text = '20-BDL'::text THEN '10-GDL'::character varying
+                                    ELSE oi.productionfacility
+                                END AS productionfacility, oi.quantity
+                           FROM fct."order" o
+                      JOIN ( SELECT DISTINCT o.orderid, 
+                                        CASE
+                                            WHEN oi.productionfacility::text = '20-BDL'::text THEN '10-GDL'::character varying
+                                            ELSE oi.productionfacility
+                                        END AS productionfacility, oi.quantity::double precision AS quantity
+                                   FROM fct."order" o
+                              LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+                         LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+                        WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '30 days'::interval) AND oi.remakeid IS NULL AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND o.ordertypeid = 0) su ON o.remakeof = su.orderid
+                 LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+            LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+           WHERE o.dateinvoicedlocaldts >= ('now'::character varying::date - '1 day'::interval - '90 days'::interval) AND o.dateinvoicedlocaldts <= ('now'::character varying::date - '1 day'::interval - '1 day'::interval) AND upper(p.remakedepartment::text) > ''::character varying::text AND p.remakecategory::text > ''::character varying::text AND (o.ordertypeid = 0 AND oi.remakeid::text > ''::character varying::text OR o.ordertypeid = 1 AND oi.isforsurcharge::text = 1::character varying::text)) r
+                  GROUP BY r.productionfacility) tr ON "ts".productionfacility::text = tr.productionfacility::text
+     GROUP BY tr.productionfacility, "ts".totalqty, tr.totalqty) rr
+  WHERE rr.facilityid::text > ''::character varying::text AND rr.returnrate > 0::numeric::numeric(11,5)
+  ORDER BY rr.returnrate DESC;
+
+COMMIT;

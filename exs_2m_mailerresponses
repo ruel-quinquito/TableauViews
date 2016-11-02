@@ -1,0 +1,22 @@
+CREATE OR REPLACE VIEW tableau.exs_2m_mailerresponses
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  descr,
+  facility,
+  mktgtype,
+  responses,
+  sales,
+  cases,
+  units
+)
+AS 
+ SELECT mailerresponses.recordinsertedlocaldts, mailerresponses.recordmodifiedlocaldts, mailerresponses.descr, mailerresponses.facility, mailerresponses.mktgtype, mailerresponses.responses, mailerresponses.sales, mailerresponses.cases, mailerresponses.units
+   FROM agg.mailerresponses;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.exs_2m_mailerresponses TO cloudbeam;
+GRANT SELECT ON tableau.exs_2m_mailerresponses TO operations;
+
+
+COMMIT;

@@ -1,0 +1,31 @@
+CREATE OR REPLACE VIEW tableau.opx_1m_caselocationassignment
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  caselocationid,
+  caselocationassignmenthistoryid,
+  caselocationhistoryid,
+  processlabellocationid,
+  assignedto,
+  assignmentstartutc,
+  assignmentstartlocaldts,
+  assignmentcompletedutc,
+  assignmentcompletedlocaldts,
+  insertedby,
+  updatedby
+)
+AS 
+ SELECT caselocationassignment.recordinsertedlocaldts, caselocationassignment.recordmodifiedlocaldts, caselocationassignment.caselocationid, caselocationassignment.caselocationassignmenthistoryid, caselocationassignment.caselocationhistoryid, caselocationassignment.processlabellocationid, caselocationassignment.assignedto, caselocationassignment.assignmentstartutc, caselocationassignment.assignmentstartlocaldts, caselocationassignment.assignmentcompletedutc, caselocationassignment.assignmentcompletedlocaldts, caselocationassignment.insertedby, caselocationassignment.updatedby
+   FROM fct.caselocationassignment
+  WHERE caselocationassignment.assignmentstartlocaldts >= (( SELECT getdate() - '1 mon'::interval));
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_1m_caselocationassignment TO _tableau;
+GRANT SELECT ON tableau.opx_1m_caselocationassignment TO _anthonyo;
+GRANT SELECT ON tableau.opx_1m_caselocationassignment TO _lucy;
+GRANT SELECT ON tableau.opx_1m_caselocationassignment TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_1m_caselocationassignment TO cloudbeam;
+GRANT SELECT ON tableau.opx_1m_caselocationassignment TO _ops;
+
+
+COMMIT;

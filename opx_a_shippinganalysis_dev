@@ -1,0 +1,74 @@
+CREATE OR REPLACE VIEW tableau.opx_a_shippinganalysis_dev
+(
+  orderid,
+  firstscandate,
+  lastscandate,
+  minutesbetweenfirstlastscan,
+  dateinlocaldts,
+  shipincarrierid,
+  shipintrackingnumber,
+  minutesbetweenfirstscandatein,
+  minutesbetweenlastscandatein,
+  caselocationfirstdate,
+  minutesbetweenlastscancaselocationfirstdate,
+  productionfirstdate,
+  minutesbetweenlastscanproduction,
+  building,
+  facilityid,
+  newdoctor,
+  reactivated,
+  code_return_to_customer,
+  shippedback
+)
+AS 
+ SELECT a.orderid, a.mindate AS firstscandate, a.maxdate AS lastscandate, date_diff('month'::character varying::text, a.mindate, a.maxdate) AS minutesbetweenfirstlastscan, b.dateinlocaldts, b.shipincarrierid, a.airbill AS shipintrackingnumber, date_diff('month'::character varying::text, a.mindate, b.dateinlocaldts) AS minutesbetweenfirstscandatein, date_diff('month'::character varying::text, a.maxdate, b.dateinlocaldts) AS minutesbetweenlastscandatein, clf.caselocationfirstdate, date_diff('month'::character varying::text, a.maxdate, clf.caselocationfirstdate) AS minutesbetweenlastscancaselocationfirstdate, a2.productionfirstdate, date_diff('month'::character varying::text, a.maxdate, a2.productionfirstdate) AS minutesbetweenlastscanproduction, a2.building, a2.facilityid, 
+        CASE
+            WHEN asd.labfirst = 1 THEN 1
+            ELSE 0
+        END AS newdoctor, 
+        CASE
+            WHEN asd.labrestart = 1 THEN 1
+            ELSE 0
+        END AS reactivated, 
+        CASE
+            WHEN dctr.codonly = 1 AND b.ordertype::text = 'Remake'::character varying::text THEN 1
+            ELSE 0
+        END AS code_return_to_customer, 
+        CASE
+            WHEN b.ordertype::text = 'Remake'::character varying::text THEN 1
+            ELSE 0
+        END AS shippedback
+   FROM ( SELECT b.orderid, a.airbill, min(a.datetimemark_local) AS mindate, "max"(a.datetimemark_local) AS maxdate
+           FROM fct.cpackag a
+      JOIN fct."order" b ON a.airbill::text = b.shipintrackingnumber::text AND b.dateinlocaldts >= date_add('day'::character varying::text, - 7::bigint, getdate())
+     GROUP BY b.orderid, a.airbill) a
+   JOIN ( SELECT a.orderid, min(a.begindatelocaldts) AS productionfirstdate, a.building, a.facilityid
+           FROM fct.caselocationconsolidated a
+          WHERE a."zone"::text <> 'LOGISTICS'::character varying::text
+          GROUP BY a.orderid, a.building, a.facilityid) a2 ON a.orderid = a2.orderid
+   JOIN fct."order" b ON a.orderid = b.orderid
+   JOIN ( SELECT a.orderid, min(a.begindatelocaldts) AS caselocationfirstdate
+   FROM fct.caselocationconsolidated a
+  GROUP BY a.orderid) clf ON a.orderid = clf.orderid
+   JOIN dim.doctors dctr ON dctr.doctorid::text = b.doctorid::text
+   LEFT JOIN ( SELECT accountstatusdetails.masteraccountid, accountstatusdetails.orderid, "max"(
+        CASE
+            WHEN accountstatusdetails.labfirst::text = 1::character varying::text THEN 1
+            ELSE 0
+        END) AS labfirst, "max"(
+        CASE
+            WHEN accountstatusdetails.labrestart::text = 1::character varying::text THEN 1
+            ELSE 0
+        END) AS labrestart
+   FROM cal.accountstatusdetails
+  WHERE accountstatusdetails.dateinlocaldts >= date_add('day'::character varying::text, - 7::bigint, getdate())
+  GROUP BY accountstatusdetails.masteraccountid, accountstatusdetails.orderid) asd ON asd.masteraccountid::text = b.doctorid::text AND asd.orderid::text = b.orderid::character varying::text
+  WHERE a.orderid IS NOT NULL;
+
+
+GRANT SELECT ON tableau.opx_a_shippinganalysis_dev TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_shippinganalysis_dev TO cloudbeam;
+GRANT SELECT ON tableau.opx_a_shippinganalysis_dev TO _ops;
+
+
+COMMIT;

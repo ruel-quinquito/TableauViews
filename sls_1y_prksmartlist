@@ -1,0 +1,52 @@
+CREATE OR REPLACE VIEW tableau.sls_1y_prksmartlist
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  batchnumber,
+  customernumber,
+  customername,
+  documentnumber,
+  customerponumber,
+  soptype,
+  documenttype,
+  documentdate,
+  salesamount,
+  originaltrxamount,
+  posteddate,
+  taxamount,
+  city,
+  zipcode,
+  duedate,
+  freightamount,
+  miscamount,
+  tradediscountamount,
+  trxsource,
+  glpostingdate,
+  counter,
+  shippingcountry,
+  shippingstate,
+  istestaccount,
+  mdetax,
+  orderid,
+  billingcountry,
+  billingstate,
+  crdtaxamt,
+  salestax,
+  orgtrxamt,
+  mdetax2,
+  shippingzipcode,
+  shippingcity
+)
+AS 
+ SELECT prksmartlist.recordinsertedlocaldts, prksmartlist.recordmodifiedlocaldts, prksmartlist.batchnumber, prksmartlist.customernumber, prksmartlist.customername, prksmartlist.documentnumber, prksmartlist.customerponumber, prksmartlist.soptype, prksmartlist.documenttype, prksmartlist.documentdate, prksmartlist.salesamount, prksmartlist.originaltrxamount, prksmartlist.posteddate, prksmartlist.taxamount, prksmartlist.city, prksmartlist.zipcode, prksmartlist.duedate, prksmartlist.freightamount, prksmartlist.miscamount, prksmartlist.tradediscountamount, prksmartlist.trxsource, prksmartlist.glpostingdate, prksmartlist.counter, prksmartlist.shippingcountry, prksmartlist.shippingstate, prksmartlist.istestaccount, prksmartlist.mdetax, prksmartlist.orderid, prksmartlist.billingcountry, prksmartlist.billingstate, prksmartlist.crdtaxamt, prksmartlist.salestax, prksmartlist.orgtrxamt, prksmartlist.mdetax2, prksmartlist.shippingzipcode, prksmartlist.shippingcity
+   FROM fct.prksmartlist
+  WHERE prksmartlist.glpostingdate >= (getdate() - '1 year'::interval);
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.sls_1y_prksmartlist TO _tableau;
+GRANT SELECT ON tableau.sls_1y_prksmartlist TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.sls_1y_prksmartlist TO cloudbeam;
+GRANT SELECT ON tableau.sls_1y_prksmartlist TO _ops;
+
+
+COMMIT;

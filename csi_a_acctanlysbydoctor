@@ -1,0 +1,27 @@
+CREATE OR REPLACE VIEW tableau.csi_a_acctanlysbydoctor
+(
+  dateinvoiced,
+  caseid,
+  doctorid,
+  drname,
+  patientname,
+  toothstr,
+  quantity,
+  unitprice,
+  totalcost,
+  productid,
+  description
+)
+AS 
+ SELECT o.dateinvoicedlocaldts AS dateinvoiced, oi.orderid AS caseid, o.doctorid, 'Dr. '::text + rtrim(d.firstname::text) + ' '::text + rtrim(d.lastname::text) AS drname, 
+        CASE
+            WHEN (rtrim(o.patientfirstname::text) + rtrim(o.patientlastname::text)) = ''::text THEN '(not specified)'::text
+            ELSE rtrim(o.patientlastname::text) + ', '::text + rtrim(o.patientfirstname::text)
+        END AS patientname, oi.toothstr, oi.quantity::numeric(10,2) AS quantity, oi.unitprice::numeric(10,2) AS unitprice, oi.totalcharge::numeric(10,2) AS totalcost, oi.productid, p.description
+   FROM fct."order" o
+   LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+   LEFT JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+  WHERE o.ordertypeid = 0 AND o.dateinvoicedlocaldts >= date_add('year'::text, -5::bigint, getdate()) AND p.producttypeid IS NOT NULL;
+
+COMMIT;

@@ -1,0 +1,48 @@
+CREATE OR REPLACE VIEW tableau.exs_a_ordersummarybyaccount
+(
+  doctorid,
+  firstdepartmentorderid,
+  firstdepartmentorderfacilityid,
+  firstdepartmentname,
+  firstdepartmentproductid,
+  firstdepartmentproductline,
+  firstdepartmentinvoiceddate,
+  firstdepartmentlastinvoiceddate,
+  seconddepartmentorderid,
+  seconddepartmentorderfacilityid,
+  seconddepartmentname,
+  seconddepartmentproductid,
+  seconddepartmentproductline,
+  seconddepartmentinvoiceddate,
+  seconddepartmentlastinvoiceddate,
+  thirddepartmentorderid,
+  thirddepartmentorderfacilityid,
+  thirddepartmentname,
+  thirddepartmentproductid,
+  thirddepartmentproductline,
+  thirddepartmentinvoiceddate,
+  thirddepartmentlastinvoiceddate,
+  lastdepartmentorderid,
+  lastdepartmentorderfacilityid,
+  lastdepartmentname,
+  lastdepartmentproductid,
+  lastdepartmentproductline,
+  lastdepartmentinvoiceddate,
+  ytdsaleslastyear,
+  ytdsalescurrentyear,
+  doctorgroupid
+)
+AS 
+ SELECT s.doctorid, s.firstdepartmentorderid, s.firstdepartmentorderfacilityid, s.firstdepartmentname, s.firstdepartmentproductid, s.firstdepartmentproductline, s.firstdepartmentinvoiceddate, s.firstdepartmentlastinvoiceddate, s.seconddepartmentorderid, s.seconddepartmentorderfacilityid, s.seconddepartmentname, s.seconddepartmentproductid, s.seconddepartmentproductline, s.seconddepartmentinvoiceddate, s.seconddepartmentlastinvoiceddate, s.thirddepartmentorderid, s.thirddepartmentorderfacilityid, s.thirddepartmentname, s.thirddepartmentproductid, s.thirddepartmentproductline, s.thirddepartmentinvoiceddate, s.thirddepartmentlastinvoiceddate, s.lastdepartmentorderid, s.lastdepartmentorderfacilityid, s.lastdepartmentname, s.lastdepartmentproductid, s.lastdepartmentproductline, s.lastdepartmentinvoiceddate, s.ytdsaleslastyear, s.ytdsalescurrentyear, s.doctorgroupid
+   FROM sum.ordersummarybyaccount s;
+
+
+GRANT SELECT ON tableau.exs_a_ordersummarybyaccount TO executive;
+GRANT SELECT ON tableau.exs_a_ordersummarybyaccount TO _anthonyo;
+GRANT SELECT ON tableau.exs_a_ordersummarybyaccount TO _lucy;
+GRANT SELECT ON tableau.exs_a_ordersummarybyaccount TO _exec;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.exs_a_ordersummarybyaccount TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.exs_a_ordersummarybyaccount TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,66 @@
+CREATE OR REPLACE VIEW tableau.hrd_a_obama
+(
+  employeeid,
+  firstname,
+  lastname,
+  department,
+  facilityid,
+  salaryclass,
+  employmenttypealias,
+  employeestatus,
+  supervisorname,
+  adjustedhiredate,
+  startofmeasurement,
+  endofmeasurement,
+  unitshourstopay,
+  hrstatus
+)
+AS 
+ SELECT x.employeeid, x.firstname, x.lastname, x.department, x.facilityid, x.salaryclassalias AS salaryclass, x.employmenttypealias, x.employeestatus, x.supervisorname, x.adjustedhiredate, to_char(x.startofmeasurement, 'Mon DD YYYY'::character varying::text) AS startofmeasurement, to_char(x.endofmeasurement, 'Mon DD YYYY'::character varying::text) AS endofmeasurement, sum(x.unitshourstopay) AS unitshourstopay, x.hrstatus
+   FROM ( SELECT DISTINCT a.employeeid, b.firstname, b.lastname, a.jobtitle, b.employmenttype, 
+                CASE
+                    WHEN b.employmenttype::text ~~ 'FT%'::character varying::text THEN 'Full Time'::character varying
+                    WHEN b.employmenttype::text ~~ 'PT%'::character varying::text THEN 'Part Time'::character varying
+                    WHEN b.employmenttype::text = 'INTERN'::character varying::text THEN 'Full Time'::character varying
+                    ELSE 'Unknown'::character varying
+                END AS employmenttypealias, a.salaryclass, 
+                CASE
+                    WHEN a.salaryclass::text ~~ '%HOURLY%'::character varying::text THEN 'HOURLY'::character varying
+                    WHEN a.salaryclass::text ~~ '%SALARY%'::character varying::text THEN 'SALARY'::character varying
+                    ELSE a.salaryclass
+                END AS salaryclassalias, a.workshift, b.departmentdescription AS department, b.facilityid, upper(c.firstname::text) + ' '::character varying::text + upper(c.lastname::text) AS supervisorname, b.adjustedhiredate, date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) AS monthdifference, 
+                CASE
+                    WHEN date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) > 0 THEN 'OnGoing'::character varying
+                    ELSE 'New Hire'::character varying
+                END AS employeestatus, 
+                CASE
+                    WHEN date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) > 0 THEN date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))
+                    WHEN pgdate_part('day'::character varying::text, b.adjustedhiredate) = 1::double precision AND date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) <= 0 THEN date_trunc('month'::character varying::text, b.adjustedhiredate)
+                    ELSE date_add('month'::character varying::text, 1::bigint, date_trunc('month'::character varying::text, b.adjustedhiredate))
+                END AS startofmeasurement, 
+                CASE
+                    WHEN date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) > 0 THEN date_add('day'::character varying::text, - 1::bigint, date_add('month'::character varying::text, 4::bigint, date_trunc('year'::character varying::text, getdate())))
+                    WHEN pgdate_part('day'::character varying::text, b.adjustedhiredate) = 1::double precision AND date_diff('month'::character varying::text, b.adjustedhiredate, date_add('month'::character varying::text, 4::bigint, date_add('year'::character varying::text, - 1::bigint, date_trunc('year'::character varying::text, getdate())))) <= 0 THEN date_add('day'::character varying::text, - 1::bigint, date_add('month'::character varying::text, 12::bigint, date_trunc('month'::character varying::text, b.adjustedhiredate)))
+                    ELSE date_add('day'::character varying::text, - 1::bigint, date_add('month'::character varying::text, 13::bigint, date_trunc('month'::character varying::text, b.adjustedhiredate)))
+                END AS endofmeasurement, a.checkdate, a.payperiodbegindate, a.payperiodenddate, a.payrolltype, a.payrollcode, 
+                CASE
+                    WHEN a.payrollcode::text = 'complv'::character varying::text OR a.payrollcode::text = 'nonpay'::character varying::text OR a.payrollcode::text = 'pdsusp'::character varying::text OR a.payrollcode::text = 'sctmof'::character varying::text OR a.payrollcode::text = 'uleave'::character varying::text OR a.payrollcode::text = 'wc lve'::character varying::text THEN 'non-accredited'::character varying
+                    ELSE 'accredited'::character varying
+                END AS hourtype, a.unitshourstopay, d.hrstatus
+           FROM pay.gpemployeepayhistorydetail a
+      LEFT JOIN fct.gpemployee b ON a.employeeid::text = b.employeeid::text
+   LEFT JOIN fct.gpemployee c ON b.supervisoremployeeid::text = c.employeeid::text
+   LEFT JOIN ( SELECT min(a.recordsequence) AS minseq, a.employeeid, a.hrstatus
+         FROM hr.fct_gpemployeestatushistory a
+        GROUP BY a.employeeid, a.hrstatus
+       HAVING min(a.recordsequence) = 1) d ON b.employeeid::text = d.employeeid::text
+  WHERE a.payrollcode::text = ANY (ARRAY['ABCOMP'::text, 'BEREAV'::text, 'CBOT'::text, 'CBPAY'::text, 'DBOVER'::text, 'DIST'::text, 'FLSA'::text, 'HOLOT'::text, 'HOLPAY'::text, 'HOURLY'::text, 'ILLNPY'::text, 'ILLPAY'::text, 'JURY'::text, 'MISC'::text, 'OVER'::text, 'QC'::text, 'REST'::text, 'SALARY'::text, 'SHFTDT'::text, 'SHFTOT'::text, 'SHIFT'::text, 'SHIP'::text, 'SNDHME'::text, 'SUPV'::text, 'SUPVOT'::text, 'TRAIN'::text, 'UPTIME'::text, 'VACAPY'::text, 'VACASH'::text, 'VACCAS'::text, 'VACPAY'::text, 'WKCMHL'::text, 'WORCOM'::text, 'COMPLV'::text, 'NONPAY'::text, 'PDSUSP'::text, 'SCTMOF'::text, 'ULEAVE'::text, 'WC LVE'::text])) x
+  WHERE x.payperiodenddate >= x.startofmeasurement AND x.payperiodenddate <= x.endofmeasurement AND (pgdate_part('month'::character varying::text, x.adjustedhiredate) = pgdate_part('month'::character varying::text, date_add('month'::character varying::text, - 13::bigint, getdate())) AND x.employeestatus::text = 'New Hire'::character varying::text OR x.employeestatus::text = 'OnGoing'::character varying::text) AND x.hrstatus IS NOT NULL
+  GROUP BY x.employeeid, x.firstname, x.lastname, x.department, x.salaryclassalias, x.facilityid, x.employmenttypealias, x.employeestatus, x.supervisorname, x.adjustedhiredate, x.startofmeasurement, x.endofmeasurement, x.hrstatus;
+
+
+GRANT SELECT ON tableau.hrd_a_obama TO _hr;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.hrd_a_obama TO cloudbeam;
+
+
+COMMIT;

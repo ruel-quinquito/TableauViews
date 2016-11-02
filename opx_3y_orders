@@ -1,0 +1,48 @@
+CREATE OR REPLACE VIEW tableau.opx_3y_orders
+(
+  orderid,
+  ordertypeid,
+  ordertype,
+  doctorid,
+  testdoctor,
+  customertypeid,
+  datein,
+  dateinvoiced,
+  postdatelocaldts,
+  sourcesystem,
+  sourcesystemscanner,
+  productid,
+  pf_productline,
+  pf_departmentid,
+  pf_isactualunit,
+  quantity,
+  originlocationbuilding,
+  departmentid,
+  enteredby,
+  enteredbylocation,
+  invoicedby,
+  invoicedbylocation,
+  originfacility
+)
+AS 
+ SELECT o.orderid, o.ordertypeid, o.ordertype, o.doctorid, d.istestdoctor AS testdoctor, d.customertypeid, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts AS dateinvoiced, o.postdatelocaldts, o1.sourcesystem, o1.sourcesystemscanner, oi.productid, p.pf_productline, p.pf_departmentid, p.pf_isactualunit, oi.quantity, cl.originlocationbuilding, p.departmentid, o.enteredby, gp.buildingnamegp AS enteredbylocation, o.invoicedby, gp2.buildingnamegp AS invoicedbylocation, o.originfacility
+   FROM fct."order" o
+   JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+   JOIN cal."order" o1 ON o.orderid = o1.orderid
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid
+   JOIN dim.products p ON p.productid::text = oi.productid::text
+   JOIN cal.caselocation cl ON o.orderid = cl.orderid AND cl.caselocationsequenceid = 1
+   LEFT JOIN tableau.dim_activeemployees gp ON o.enteredby::text = gp.employeeid::text AND gp.recordsequence = 1
+   LEFT JOIN tableau.dim_activeemployees gp2 ON o.invoicedby::text = gp2.employeeid::text AND gp2.recordsequence = 1
+  WHERE o.dateinlocaldts >= (getdate() - '3 years'::interval);
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_3y_orders TO _tableau;
+GRANT SELECT ON tableau.opx_3y_orders TO _anthonyo;
+GRANT SELECT ON tableau.opx_3y_orders TO _lucy;
+GRANT SELECT ON tableau.opx_3y_orders TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_3y_orders TO cloudbeam;
+GRANT SELECT ON tableau.opx_3y_orders TO _ops;
+
+
+COMMIT;

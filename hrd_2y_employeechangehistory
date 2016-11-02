@@ -1,0 +1,86 @@
+CREATE OR REPLACE VIEW tableau.hrd_2y_employeechangehistory
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  gpdb,
+  gpdbid,
+  employeeid,
+  lastname,
+  firstname,
+  nickname,
+  gender,
+  company,
+  location,
+  division,
+  dpartmentcode,
+  department,
+  jobtitle,
+  employmenttype,
+  hrstatus,
+  hrnote,
+  changedate,
+  changereason,
+  effectivebegindate,
+  effectiveenddate,
+  originalhiredate,
+  lastdateworked,
+  adjustedhiredate,
+  senioritydate,
+  supervisordescription,
+  supervisoremployeeid,
+  supervisorjobtitle,
+  supervisorlastname,
+  supervisorfirstname,
+  supervisornickname,
+  supervisordepartment,
+  recordsequence,
+  divisionid,
+  locationid,
+  facilityid,
+  buildingname,
+  isdirectlaborcurrent,
+  workshiftcurrent,
+  employeeidfrom,
+  recordsequencefrom,
+  gpdbfrom,
+  gpdbidfrom,
+  companyfrom,
+  locationfrom,
+  divisionfrom,
+  dpartmentcodefrom,
+  departmentfrom,
+  jobtitlefrom,
+  employmenttypefrom,
+  hrstatusfrom,
+  changedatefrom,
+  changereasonfrom,
+  effectivebegindatefrom,
+  effectiveenddatefrom,
+  supervisordescriptionfrom,
+  supervisoremployeeidfrom,
+  supervisorjobtitlefrom,
+  supervisorlastnamefrom,
+  supervisorfirstnamefrom,
+  supervisordepartmentfrom,
+  divisionidfrom,
+  locationidfrom,
+  facilityidfrom,
+  buildingnamefrom,
+  isdirectlaborcurrentfrom,
+  workshiftcurrentfrom
+)
+AS 
+ SELECT DISTINCT f.recordinsertedlocaldts, f.recordmodifiedlocaldts, f.gpdb, f.gpdbid, f.employeeid, f.lastname, f.firstname, f.nickname, f.gender, f.company, f."location", f.division, f.dpartmentcode, f.department, f.jobtitle, f.employmenttype, f.hrstatus, f.hrnote, f.changedate, f.changereason, f.effectivebegindate, f.effectiveenddate, f.originalhiredate, f.lastdateworked, f.adjustedhiredate, f.senioritydate, f.supervisordescription, f.supervisoremployeeid, f.supervisorjobtitle, f.supervisorlastname, f.supervisorfirstname, f.supervisornickname, f.supervisordepartment, f.recordsequence, f.divisionid, f.locationid, f.facilityid, f.buildingname, f.isdirectlaborcurrent, f.workshiftcurrent, x.employeeidfrom, x.recordsequencefrom, x.gpdbfrom, x.gpdbidfrom, x.companyfrom, x.locationfrom, x.divisionfrom, x.dpartmentcodefrom, x.departmentfrom, x.jobtitlefrom, x.employmenttypefrom, x.hrstatusfrom, x.changedatefrom, x.changereasonfrom, x.effectivebegindatefrom, x.effectiveenddatefrom, x.supervisordescriptionfrom, x.supervisoremployeeidfrom, x.supervisorjobtitlefrom, x.supervisorlastnamefrom, x.supervisorfirstnamefrom, x.supervisordepartmentfrom, x.divisionidfrom, x.locationidfrom, x.facilityidfrom, x.buildingnamefrom, x.isdirectlaborcurrentfrom, x.workshiftcurrentfrom
+   FROM hr.fct_gpemployeestatushistory f
+   JOIN ( SELECT a.employeeid AS employeeidfrom, a.recordsequence AS recordsequencefrom, a.gpdb AS gpdbfrom, a.gpdbid AS gpdbidfrom, a.company AS companyfrom, a."location" AS locationfrom, a.division AS divisionfrom, a.dpartmentcode AS dpartmentcodefrom, a.department AS departmentfrom, a.jobtitle AS jobtitlefrom, a.employmenttype AS employmenttypefrom, a.hrstatus AS hrstatusfrom, a.changedate AS changedatefrom, a.changereason AS changereasonfrom, a.effectivebegindate AS effectivebegindatefrom, a.effectiveenddate AS effectiveenddatefrom, a.supervisordescription AS supervisordescriptionfrom, a.supervisoremployeeid AS supervisoremployeeidfrom, a.supervisorjobtitle AS supervisorjobtitlefrom, a.supervisorlastname AS supervisorlastnamefrom, a.supervisorfirstname AS supervisorfirstnamefrom, a.supervisordepartment AS supervisordepartmentfrom, a.divisionid AS divisionidfrom, a.locationid AS locationidfrom, a.facilityid AS facilityidfrom, a.buildingname AS buildingnamefrom, a.isdirectlaborcurrent AS isdirectlaborcurrentfrom, a.workshiftcurrent AS workshiftcurrentfrom
+           FROM hr.fct_gpemployeestatushistory a
+          WHERE a.changedate > date_add('year'::character varying::text, - 2::bigint, getdate())) x ON f.employeeid::text = x.employeeidfrom::text AND f.recordsequence = (x.recordsequencefrom - 1);
+
+
+GRANT SELECT ON tableau.hrd_2y_employeechangehistory TO _lucy;
+GRANT SELECT ON tableau.hrd_2y_employeechangehistory TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.hrd_2y_employeechangehistory TO cloudbeam;
+GRANT SELECT ON tableau.hrd_2y_employeechangehistory TO _ops;
+
+
+COMMIT;

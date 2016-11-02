@@ -1,0 +1,88 @@
+CREATE OR REPLACE VIEW tableau.opx_1y_centralizedmilling
+(
+  millinglocation,
+  isautopilot,
+  lastmilled,
+  arbornumber,
+  millingjobstatus,
+  locationstartdate,
+  locationenddate,
+  millingjobuid,
+  millmachineserialnumber,
+  millmachinevendor,
+  millmachinemodel,
+  millmachinetype,
+  millingtechnicianid,
+  nestingtechnicianid,
+  jobname,
+  blockid,
+  blockmaterial,
+  blocktype,
+  blocksize,
+  stockenlargementfactor,
+  blockserialnumber,
+  blockheight,
+  blockcolor,
+  queuedtimeinminutes,
+  runtimeinminutes,
+  partkind,
+  parttypegroup,
+  parttype,
+  shade,
+  productid,
+  productdepartment,
+  productline,
+  orderid,
+  toothstr,
+  isbridge,
+  isupper,
+  isanterior,
+  totalcycletime,
+  cycletimeperunit,
+  produnits,
+  nonprodunits,
+  qcstatus,
+  qcrejectreasoncategory,
+  qcrejectreason,
+  trayslotnumber,
+  trayserialnumber,
+  errormessage,
+  isremill,
+  remillreasoncategory,
+  remillreason,
+  remillofautopilot,
+  millingqccompleteddate,
+  sinterqccompleteddate,
+  datein,
+  dateinvoiced,
+  maxdaysinlab,
+  actualdaysinlab,
+  labduedate,
+  daysremaining,
+  doctorid,
+  duedate,
+  isreturned,
+  returnreason,
+  lastlocationprocess,
+  lastlocationcheckindate,
+  lastlocationcheckoutdate,
+  lastassignedto,
+  lastassignmentstartdate,
+  lastassignmentcompleteddate,
+  salesdepartment,
+  requireremillunits,
+  remillmillinglocation,
+  remillisautopilot
+)
+AS 
+ SELECT cm.millinglocation, cm.isautopilot, cm.lastmilled, cm.arbornumber, cm.millingjobstatus, cm.locationstartdate, cm.locationenddate, cm.millingjobuid, cm.millmachineserialnumber, cm.millmachinevendor, cm.millmachinemodel, cm.millmachinetype, cm.millingtechnicianid, cm.nestingtechnicianid, cm.jobname, cm.blockid, cm.blockmaterial, cm.blocktype, cm.blocksize, cm.stockenlargementfactor, cm.blockserialnumber, cm.blockheight, cm.blockcolor, cm.queuedtimeinminutes, cm.runtimeinminutes, cm.partkind, cm.parttypegroup, cm.parttype, cm.shade, cm.productid, cm.productdepartment, cm.productline, cm.orderid, cm.toothstr, cm.isbridge, cm.isupper, cm.isanterior, cm.totalcycletime, cm.cycletimeperunit, cm.produnits + cm.remillunits AS produnits, cm.nonprodunits, cm.qcstatus, cm.qcrejectreasoncategory, cm.qcrejectreason, cm.trayslotnumber, cm.trayserialnumber, cm.errormessage, cm.isremill, cm.remillreasoncategory, cm.remillreason, cm.remillofautopilot, cm.millingqccompleteddate, cm.sinterqccompleteddate, cm.datein, cm.dateinvoiced, cm.maxdaysinlab, cm.actualdaysinlab, cm.labduedate, cm.daysremaining, cm.doctorid, cm.duedate, cm.isreturned, cm.returnreason, cm.lastlocationprocess, cm.lastlocationcheckindate, cm.lastlocationcheckoutdate, cm.lastassignedto, cm.lastassignmentstartdate, cm.lastassignmentcompleteddate, cm.salesdepartment, cm.requireremillunits, cm.remillmillinglocation, cm.remillisautopilot
+   FROM sum.centralizedmillingoneyear cm;
+
+
+GRANT SELECT ON tableau.opx_1y_centralizedmilling TO _anthonyo;
+GRANT SELECT ON tableau.opx_1y_centralizedmilling TO _lucy;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_1y_centralizedmilling TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opx_1y_centralizedmilling TO _ops;
+
+
+COMMIT;

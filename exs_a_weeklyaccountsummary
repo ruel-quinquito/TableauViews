@@ -1,0 +1,17 @@
+CREATE OR REPLACE VIEW tableau.exs_a_weeklyaccountsummary
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  facilityid,
+  statusgroup,
+  currentaccounts,
+  previousaccounts,
+  currentytdaccounts,
+  previousytdaccounts,
+  reportdate
+)
+AS 
+ SELECT weeklyaccountsummary.recordinsertedlocaldts, weeklyaccountsummary.recordmodifiedlocaldts, weeklyaccountsummary.facilityid, weeklyaccountsummary.statusgroup, weeklyaccountsummary.currentaccounts, weeklyaccountsummary.previousaccounts, weeklyaccountsummary.currentytdaccounts, weeklyaccountsummary.previousytdaccounts, weeklyaccountsummary.reportdate
+   FROM sum.weeklyaccountsummary;
+
+COMMIT;

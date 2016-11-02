@@ -1,0 +1,25 @@
+CREATE OR REPLACE VIEW tableau.opx_1y_clearchoice
+(
+  doctorid,
+  practicename,
+  date,
+  pf_departmentid,
+  pf_productgroup,
+  pf_productline,
+  totalnetsales,
+  groupid
+)
+AS 
+ SELECT d.doctorid, d.practicename, msapfg.date, msapfg.pf_departmentid, msapfg.pf_productgroup, msapfg.pf_productline, msapfg.totalnetsales, d.groupid
+   FROM sum.monthlysalesaccountpfgroupings msapfg
+   JOIN dim.doctors d ON msapfg.doctorid::text = d.doctorid::text
+  WHERE (d.groupid::text = 'clearchoic'::character varying::text OR d.groupid::text = 'ClearChoic'::character varying::text OR d.groupid::text = 'Clearchoic'::character varying::text) AND msapfg.date >= '2015-01-01 00:00:00'::timestamp without time zone;
+
+
+GRANT SELECT ON tableau.opx_1y_clearchoice TO _anthonyo;
+GRANT SELECT ON tableau.opx_1y_clearchoice TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_1y_clearchoice TO cloudbeam;
+GRANT SELECT ON tableau.opx_1y_clearchoice TO _ops;
+
+
+COMMIT;

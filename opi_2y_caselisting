@@ -1,0 +1,29 @@
+CREATE OR REPLACE VIEW tableau.opi_2y_caselisting
+(
+  dateinvoicedlocaldts,
+  dateinlocaldts,
+  tooth,
+  toothstr,
+  orderid,
+  originfacility,
+  productionfacility,
+  productid,
+  isbridge
+)
+AS 
+ SELECT DISTINCT o.dateinvoicedlocaldts, o.dateinlocaldts, ot.tooth, oi.toothstr, o.orderid, o.originfacility, oi.productionfacility, oi.productid, oi.isbridge
+   FROM fct."order" o
+   LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   LEFT JOIN cal.orderteeth ot ON o.orderid = ot.orderid AND oi.orderproductid = ot.orderproductid
+  WHERE o.dateinvoicedlocaldts >= (( SELECT getdate() - '6 mons'::interval)) AND oi.toothstr IS NOT NULL;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opi_2y_caselisting TO _tableau;
+GRANT SELECT ON tableau.opi_2y_caselisting TO _anthonyo;
+GRANT SELECT ON tableau.opi_2y_caselisting TO _lucy;
+GRANT SELECT ON tableau.opi_2y_caselisting TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_2y_caselisting TO cloudbeam;
+GRANT SELECT ON tableau.opi_2y_caselisting TO _ops;
+
+
+COMMIT;

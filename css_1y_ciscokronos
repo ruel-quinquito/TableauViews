@@ -1,0 +1,53 @@
+CREATE OR REPLACE VIEW tableau.css_1y_ciscokronos
+(
+  resourcename,
+  resourceloginid,
+  employeeid,
+  teamname,
+  clockindts,
+  clockoutdts,
+  ciscologindts,
+  ciscologoutdts,
+  eventdate
+)
+AS 
+ SELECT DISTINCT cr.resourcename, cr.resourceloginid, j.employeeid, g.teamname, 
+        CASE
+            WHEN g.teamname::text = 'CSR-MIAMI'::character varying::text THEN date_add('hour'::character varying::text, - 3::bigint, j.clockindts)
+            WHEN g.teamname::text = 'SSD-CSR'::character varying::text THEN date_add('hour'::character varying::text, - 1::bigint, j.clockindts)
+            ELSE j.clockindts
+        END AS clockindts, 
+        CASE
+            WHEN g.teamname::text = 'CSR-MIAMI'::character varying::text THEN date_add('hour'::character varying::text, - 3::bigint, j.clockoutdts)
+            WHEN g.teamname::text = 'SSD-CSR'::character varying::text THEN date_add('hour'::character varying::text, - 1::bigint, j.clockoutdts)
+            ELSE j.clockoutdts
+        END AS clockoutdts, g.ciscologindts, g.ciscologoutdts, g.eventdate
+   FROM fct.ciscoresource cr
+   JOIN ( SELECT k1.employeeid, k1.eventdate, COALESCE(k1.clockindatetime, k2.clockindatetime) AS clockindts, COALESCE(k2.clockoutdatetime, k1.clockoutdatetime) AS clockoutdts
+           FROM ( SELECT kronostimeclock.employeeid, kronostimeclock.eventdate, kronostimeclock.clockindatetime, kronostimeclock.clockoutdatetime
+                   FROM cal.kronostimeclock
+                  WHERE kronostimeclock.startreason::text = 'newShift'::character varying::text) k1
+      JOIN ( SELECT y.employeeid, y.eventdate, y.clockindatetime, y.clockoutdatetime
+                   FROM cal.kronostimeclock y
+              JOIN ( SELECT "max"(kronostimeclock.recordsequence) AS recordsequence, kronostimeclock.employeeid, kronostimeclock.eventdate
+                           FROM cal.kronostimeclock
+                          GROUP BY kronostimeclock.employeeid, kronostimeclock.eventdate) x ON x.employeeid::text = y.employeeid::text AND x.eventdate = y.eventdate AND x.recordsequence = y.recordsequence) k2 ON k1.eventdate = k2.eventdate AND k1.employeeid::text = k2.employeeid::text) j ON cr.employeeid::text = j.employeeid::text
+   JOIN ( SELECT DISTINCT a.resourcename, a.teamname, a.eventdatetime AS ciscologindts, b.eventdatetime AS ciscologoutdts, a.eventdate
+      FROM ( SELECT informixagentdetail.resourcename, informixagentdetail.eventdatetime, date_trunc('day'::character varying::text, informixagentdetail.eventdatetime) AS eventdate, informixagentdetail.teamname, informixagentdetail.agentstatedetaileventdescription
+              FROM fct.informixagentdetail
+             WHERE informixagentdetail.seq = 1) a
+   LEFT JOIN ( SELECT informixagentdetail.resourcename, informixagentdetail.eventdatetime, date_trunc('day'::character varying::text, informixagentdetail.eventdatetime) AS eventdate, informixagentdetail.teamname, informixagentdetail.agentstatedetaileventdescription, pg_catalog.row_number()
+             OVER( 
+             PARTITION BY informixagentdetail.resourcename, date_trunc('day'::character varying::text, informixagentdetail.eventdatetime)
+             ORDER BY informixagentdetail.seq DESC) AS rownum
+              FROM fct.informixagentdetail
+             WHERE informixagentdetail.timeinsec IS NULL OR informixagentdetail.agentstatedetaileventdescription::text = 'Log Out'::character varying::text AND informixagentdetail.reasondescription::text = 'End of Work Day'::text) b ON a.resourcename::text = b.resourcename::text AND a.eventdate = b.eventdate AND b.rownum = 1) g ON cr.resourcename::text = g.resourcename::text AND j.eventdate = g.eventdate
+  WHERE g.eventdate >= (getdate() - '1 year'::interval) AND cr.active::text = 1::character varying::text;
+
+
+GRANT SELECT ON tableau.css_1y_ciscokronos TO operations;
+GRANT SELECT ON tableau.css_1y_ciscokronos TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.css_1y_ciscokronos TO cloudbeam;
+
+
+COMMIT;

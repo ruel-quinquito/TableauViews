@@ -1,0 +1,63 @@
+CREATE OR REPLACE VIEW tableau.opx_a_cms_casesnapshot
+(
+  recordinsertedlocaldts,
+  service,
+  version,
+  created_utc,
+  created_by,
+  updated_utc,
+  updated_by,
+  orderid,
+  reference_id,
+  cloudpoint_id,
+  casestatus,
+  accountid,
+  accountuser,
+  accountusergroup,
+  location,
+  locationid,
+  outsourcestatus,
+  outsourcelocation,
+  outsourcelocationid,
+  services_ordered,
+  patientname,
+  doctor,
+  restoration_id,
+  restoration_count,
+  type,
+  range,
+  material,
+  shade,
+  height
+)
+AS 
+ SELECT DISTINCT s.recordinsertedlocaldts, s.service, s.version, s.case_creationdate AS created_utc, s.cms_user AS created_by, s.case_updatedate AS updated_utc, s.case_username AS updated_by, 
+        CASE
+            WHEN s.orderid::text = ''::text THEN NULL::character varying
+            ELSE s.orderid
+        END AS orderid, s.casereference AS reference_id, s.publicid AS cloudpoint_id, s.case_status AS casestatus, s.accountid, s.cms_user AS accountuser, s.cms_usergroupname AS accountusergroup, s.cms_usergroupname AS "location", s.cms_usergroup::character varying(10) AS locationid, s.outsource_status AS outsourcestatus, s.outsource_group AS outsourcelocation, s.outsource_groupid AS outsourcelocationid, s.services_ordered, s.case_patientname AS patientname, s.case_doctorname AS doctor, s.restoration_id, cnt.rcount AS restoration_count, s.restoration_typename AS "type", s.restoration_range_ada AS "range", s.restoration_material_name AS material, s.restoration_shades_body AS shade, round(s.restoration_height * 1000::numeric, 2) AS height
+   FROM cp.fct_cms_casehistory s
+   JOIN ( SELECT fct_cms_casehistory.casereference, fct_cms_casehistory.restoration_id, "max"(fct_cms_casehistory.case_updatedate) AS "max"
+           FROM cp.fct_cms_casehistory
+          GROUP BY fct_cms_casehistory.casereference, fct_cms_casehistory.restoration_id) maxcms ON s.casereference::text = maxcms.casereference::text AND s.restoration_id = maxcms.restoration_id
+   JOIN ( SELECT c.casereference, count(DISTINCT c.restoration_id) AS rcount
+      FROM cp.fct_cms_casehistory c
+     GROUP BY c.casereference) cnt ON s.casereference::text = cnt.casereference::text
+  WHERE s.cmsrank = 1
+UNION 
+ SELECT cms_messages.recordinsertedlocaldts, 'BackFill' AS service, NULL::"unknown" AS version, cms_messages.caseinstancecreationdate AS created_utc, cms_messages."user" AS created_by, cms_messages.restorationupdated AS updated_utc, cms_messages.restorationlasteditor AS updated_by, cms_messages.caseinstanceorderid AS orderid, NULL::"unknown" AS reference_id, NULL::"unknown" AS cloudpoint_id, cms_messages.status AS casestatus, NULL::"unknown" AS accountid, cms_messages."user" AS accountuser, cms_messages.caseinstanceaccountname AS accountusergroup, cms_messages.caseinstanceaccountname AS "location", cms_messages.caseinstancecurrentgroupid AS locationid, NULL::"unknown" AS outsourcestatus, NULL::"unknown" AS outsourcelocation, NULL::"unknown" AS outsourcelocationid, NULL::"unknown" AS services_ordered, cms_messages.caseinstancepatientname AS patientname, NULL::"unknown" AS doctor, cms_messages.restorationid AS restoration_id, cms_messages.unitcount AS restoration_count, cms_messages.restorationtypename AS "type", cms_messages.parsedtoothstruniversal AS "range", cms_messages.restorationmaterialname AS material, NULL::"unknown" AS shade, NULL::"unknown" AS height
+   FROM cp.cms_messages
+  WHERE cms_messages.datatype::text = 'BackFill'::text AND 
+        CASE
+            WHEN cms_messages.caseinstanceorderid::text = ''::text THEN NULL::character varying
+            ELSE cms_messages.caseinstanceorderid
+        END IS NOT NULL;
+
+
+GRANT SELECT ON tableau.opx_a_cms_casesnapshot TO _benv;
+GRANT SELECT ON tableau.opx_a_cms_casesnapshot TO operations;
+GRANT SELECT ON tableau.opx_a_cms_casesnapshot TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_cms_casesnapshot TO cloudbeam;
+
+
+COMMIT;

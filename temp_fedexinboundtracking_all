@@ -1,0 +1,104 @@
+CREATE OR REPLACE VIEW tableau.temp_fedexinboundtracking_all
+(
+  rowid,
+  fedex_filename,
+  rtype,
+  ccode,
+  tpidc,
+  "trck#",
+  fill1,
+  "mtrk#",
+  fill2,
+  shipd,
+  estdd,
+  estdt,
+  delvdts,
+  podnm,
+  ocode,
+  dcode,
+  statd,
+  statc,
+  fill3,
+  shprn,
+  shpco,
+  shpa1,
+  shpa2,
+  shpa3,
+  shprc,
+  shprs,
+  shpcc,
+  shprz,
+  "acct#",
+  siref,
+  rcptn,
+  rcpco,
+  rcpa1,
+  rcpa2,
+  rcpa3,
+  rcptc,
+  rcpts,
+  rcptz,
+  rcpcc,
+  fill4,
+  svccd,
+  pkgcd,
+  trpay,
+  dtpay,
+  typcd,
+  fill5,
+  piecs,
+  uomcd,
+  dimcd,
+  fill6,
+  pkgln,
+  pkgwd,
+  pkght,
+  poref,
+  inref,
+  "dept#",
+  shpid,
+  lbwgt,
+  kgwgt,
+  dexcd,
+  scode,
+  "tcn#",
+  "bol#",
+  "pc#1",
+  "pc#2",
+  "rma#",
+  apptd,
+  apptt,
+  ecity,
+  evest,
+  eveco,
+  cdrc1,
+  cdrc2,
+  ainfo,
+  sphc1,
+  sphc2,
+  sphc3,
+  sphc4,
+  "rcpt#",
+  fill7
+)
+AS 
+ SELECT fedexinboundtracking.rowid, fedexinboundtracking.fedex_filename, fedexinboundtracking.rtype, fedexinboundtracking.ccode, fedexinboundtracking.tpidc, fedexinboundtracking."trck#", fedexinboundtracking.fill1, fedexinboundtracking."mtrk#", fedexinboundtracking.fill2, fedexinboundtracking.shipd, fedexinboundtracking.estdd, fedexinboundtracking.estdt, (
+        CASE
+            WHEN fedexinboundtracking.delvd::text = ''::text THEN NULL::character varying
+            ELSE fedexinboundtracking.delvd
+        END::text + ' '::text + 
+        CASE
+            WHEN fedexinboundtracking.delvt::text = ''::text THEN NULL::character varying
+            ELSE fedexinboundtracking.delvt
+        END::text)::timestamp without time zone AS delvdts, fedexinboundtracking.podnm, fedexinboundtracking.ocode, fedexinboundtracking.dcode, fedexinboundtracking.statd, fedexinboundtracking.statc, fedexinboundtracking.fill3, fedexinboundtracking.shprn, fedexinboundtracking.shpco, fedexinboundtracking.shpa1, fedexinboundtracking.shpa2, fedexinboundtracking.shpa3, fedexinboundtracking.shprc, fedexinboundtracking.shprs, fedexinboundtracking.shpcc, fedexinboundtracking.shprz, fedexinboundtracking."acct#", fedexinboundtracking.siref, fedexinboundtracking.rcptn, fedexinboundtracking.rcpco, fedexinboundtracking.rcpa1, fedexinboundtracking.rcpa2, fedexinboundtracking.rcpa3, fedexinboundtracking.rcptc, fedexinboundtracking.rcpts, fedexinboundtracking.rcptz, fedexinboundtracking.rcpcc, fedexinboundtracking.fill4, fedexinboundtracking.svccd, fedexinboundtracking.pkgcd, fedexinboundtracking.trpay, fedexinboundtracking.dtpay, fedexinboundtracking.typcd, fedexinboundtracking.fill5, fedexinboundtracking.piecs, fedexinboundtracking.uomcd, fedexinboundtracking.dimcd, fedexinboundtracking.fill6, fedexinboundtracking.pkgln, fedexinboundtracking.pkgwd, fedexinboundtracking.pkght, fedexinboundtracking.poref, fedexinboundtracking.inref, fedexinboundtracking."dept#", fedexinboundtracking.shpid, fedexinboundtracking.lbwgt, fedexinboundtracking.kgwgt, fedexinboundtracking.dexcd, fedexinboundtracking.scode, fedexinboundtracking."tcn#", fedexinboundtracking."bol#", fedexinboundtracking."pc#1", fedexinboundtracking."pc#2", fedexinboundtracking."rma#", fedexinboundtracking.apptd, fedexinboundtracking.apptt, fedexinboundtracking.ecity, fedexinboundtracking.evest, fedexinboundtracking.eveco, fedexinboundtracking.cdrc1, fedexinboundtracking.cdrc2, fedexinboundtracking.ainfo, fedexinboundtracking.sphc1, fedexinboundtracking.sphc2, fedexinboundtracking.sphc3, fedexinboundtracking.sphc4, fedexinboundtracking."rcpt#", fedexinboundtracking.fill7
+   FROM import.fedexinboundtracking;
+
+
+GRANT SELECT ON tableau.temp_fedexinboundtracking_all TO _etl;
+GRANT SELECT ON tableau.temp_fedexinboundtracking_all TO operations;
+GRANT SELECT ON tableau.temp_fedexinboundtracking_all TO bidevelopers;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.temp_fedexinboundtracking_all TO cloudbeam;
+GRANT SELECT ON tableau.temp_fedexinboundtracking_all TO _ops;
+
+
+COMMIT;

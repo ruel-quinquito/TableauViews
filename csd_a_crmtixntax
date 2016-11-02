@@ -1,0 +1,96 @@
+CREATE OR REPLACE VIEW tableau.csd_a_crmtixntax
+(
+  ticketnumber,
+  itemtype,
+  createdon,
+  modifiedon,
+  status,
+  createdby,
+  owner,
+  escalatedto,
+  team,
+  title,
+  subject,
+  contact,
+  location,
+  tickettype,
+  description,
+  resolution,
+  kbarticle,
+  transferfromcsr,
+  timespent,
+  billedserviceunits,
+  accountdepartment,
+  accountnumber,
+  whenclosed
+)
+AS 
+(( SELECT DISTINCT c.ticketnumber, 'ticket'::character varying AS itemtype, c.ticketcreatedon AS createdon, c.ticketmodifiedon AS modifiedon, c.ticketstatus AS status, c.ticketcreatedby AS createdby, c.ticketowner AS "owner", c.ticketescalatedto AS escalatedto, x.team, c.tickettitle AS title, c.ticketsubject AS subject, c.ticketcontact AS contact, c.ticketlocation AS "location", c.tickettype, c.ticketdescription AS description, c.ticketresolution AS resolution, c.ticketkbarticle AS kbarticle, c.tickettransferfromcsr AS transferfromcsr, c.tickettimespentminutes AS timespent, c.ticketbilledserviceunits AS billedserviceunits, COALESCE(c.ticketaccountnumber, c.ticketaccountdepartment) AS accountdepartment, c.ticketaccountnumber AS accountnumber, 
+        CASE
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) <= 1440 THEN 'same day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 1440 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 2880 THEN 'next day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 2880 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 4320 THEN 'second day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 4320 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 7200 THEN '2-5'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 7200 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 14400 THEN '5 days'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 14400 THEN '10 days'::character varying
+            ELSE 'other'::character varying
+        END AS whenclosed
+   FROM fct.crmdynamics c
+   JOIN ( SELECT DISTINCT crmdynamics.ticketowner AS name, crmdynamics.ticketteamowner AS team
+           FROM fct.crmdynamics
+          WHERE crmdynamics.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crmdynamics.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) x ON c.ticketowner::text = x.name::text AND c.ticketteamowner::text = x.team::text
+   JOIN ( SELECT crmdynamics.ticketnumber, crmdynamics.id, pg_catalog.row_number()
+     OVER( 
+     PARTITION BY crmdynamics.ticketnumber
+     ORDER BY crmdynamics.ticketmodifiedon, crmdynamics.tickettimespentminutes DESC) AS rownum
+      FROM fct.crmdynamics
+     WHERE crmdynamics.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crmdynamics.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) z ON c.ticketnumber::text = z.ticketnumber::text AND c.id = z.id AND z.rownum = 1
+  WHERE c.ticketescalatedto IS NULL
+UNION ALL 
+ SELECT DISTINCT c.ticketnumber, 'task'::character varying AS itemtype, c.taskcreatedon AS createdon, c.taskactualenddate AS modifiedon, c.taskactivitystatus AS status, c.taskcreatedby AS createdby, c.taskowner AS "owner", NULL::character varying AS escalatedto, x.team, c.tasksubject AS title, c.tasksubjectgroup AS subject, NULL::character varying AS contact, c.ticketlocation AS "location", c.tickettype, NULL::character varying AS description, NULL::character varying AS resolution, NULL::character varying AS kbarticle, NULL::character varying AS transferfromcsr, c.tasktimespent AS timespent, NULL::integer AS billedserviceunits, NULL::character varying AS accountdepartment, NULL::character varying AS accountnumber, 
+        CASE
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) <= 1440 THEN 'same day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) >= 1440 AND date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) < 2880 THEN 'next day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) >= 2880 AND date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) < 4320 THEN 'second day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) >= 4320 AND date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) < 7200 THEN '2-5'::character varying
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) >= 7200 AND date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) < 14400 THEN '5 days'::character varying
+            WHEN date_diff('minute'::character varying::text, c.taskcreatedon, c.taskactualenddate) >= 14400 THEN '10 days'::character varying
+            ELSE 'other'::character varying
+        END AS whenclosed
+   FROM fct.crmdynamics c
+   JOIN ( SELECT DISTINCT crmdynamics.ticketowner AS name, crmdynamics.ticketteamowner AS team
+           FROM fct.crmdynamics
+          WHERE crmdynamics.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crmdynamics.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) x ON c.taskowner::text = x.name::text
+  WHERE c.taskactivitytype::text = 'Task'::character varying::text)
+UNION ALL 
+ SELECT DISTINCT c.ticketnumber, 'escalated'::character varying AS itemtype, c.ticketcreatedon AS createdon, c.ticketmodifiedon AS modifiedon, c.ticketstatus AS status, c.ticketcreatedby AS createdby, c.ticketowner AS "owner", c.ticketescalatedto AS escalatedto, x.team, c.tickettitle AS title, c.ticketsubject AS subject, c.ticketcontact AS contact, c.ticketlocation AS "location", c.tickettype, c.ticketdescription AS description, c.ticketresolution AS resolution, c.ticketkbarticle AS kbarticle, c.tickettransferfromcsr AS transferfromcsr, c.tickettimespentminutes AS timespent, c.ticketbilledserviceunits AS billedserviceunits, COALESCE(c.ticketaccountnumber, c.ticketaccountdepartment) AS accountdepartment, c.ticketaccountnumber AS accountnumber, 
+        CASE
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) <= 1440 THEN 'same day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 1440 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 2880 THEN 'next day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 2880 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 4320 THEN 'second day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 4320 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 7200 THEN '2-5'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 7200 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 14400 THEN '5 days'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 14400 THEN '10 days'::character varying
+            ELSE 'other'::character varying
+        END AS whenclosed
+   FROM fct.crmdynamics c
+   JOIN ( SELECT DISTINCT crmdynamics.ticketowner AS name, crmdynamics.ticketteamowner AS team
+           FROM fct.crmdynamics
+          WHERE crmdynamics.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crmdynamics.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) x ON c.ticketowner::text = x.name::text AND c.ticketescalatedto IS NOT NULL)
+UNION ALL 
+ SELECT DISTINCT c.ticketnumber, 'escalatedfrom'::character varying AS itemtype, c.ticketcreatedon AS createdon, c.ticketmodifiedon AS modifiedon, c.ticketstatus AS status, c.ticketcreatedby AS createdby, c.ticketescalatedto AS "owner", c.ticketowner AS escalatedto, x.team, c.tickettitle AS title, c.ticketsubject AS subject, c.ticketcontact AS contact, c.ticketlocation AS "location", c.tickettype, c.ticketdescription AS description, c.ticketresolution AS resolution, c.ticketkbarticle AS kbarticle, c.tickettransferfromcsr AS transferfromcsr, c.tickettimespentminutes AS timespent, c.ticketbilledserviceunits AS billedserviceunits, COALESCE(c.ticketaccountnumber, c.ticketaccountdepartment) AS accountdepartment, c.ticketaccountnumber AS accountnumber, 
+        CASE
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) <= 1440 THEN 'same day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 1440 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 2880 THEN 'next day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 2880 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 4320 THEN 'second day'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 4320 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 7200 THEN '2-5'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 7200 AND date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) < 14400 THEN '5 days'::character varying
+            WHEN date_diff('minute'::character varying::text, c.ticketcreatedon, c.ticketmodifiedon) >= 14400 THEN '10 days'::character varying
+            ELSE 'other'::character varying
+        END AS whenclosed
+   FROM fct.crmdynamics c
+   JOIN ( SELECT DISTINCT crmdynamics.ticketowner AS name, crmdynamics.ticketteamowner AS team
+           FROM fct.crmdynamics
+          WHERE crmdynamics.ticketteamowner::text <> 'IT Helpdesk'::character varying::text AND crmdynamics.ticketteamowner::text <> 'Prismatik/CTS'::character varying::text) x ON c.ticketescalatedto::text = x.name::text;
+
+COMMIT;

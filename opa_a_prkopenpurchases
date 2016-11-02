@@ -1,0 +1,41 @@
+CREATE OR REPLACE VIEW tableau.opa_a_prkopenpurchases
+(
+  ponumber,
+  gl_po,
+  item,
+  glitem_location,
+  prk_item,
+  itemdescription,
+  itemgroup,
+  issueunitofmeasure,
+  postatusdescription,
+  dateordered,
+  quantityordered,
+  cost,
+  receivedquantity,
+  remainingquanity
+)
+AS 
+ SELECT pd.ponumber, pd.vendorponumber AS gl_po, pd.item, pd.cribbin AS glitem_location, pd.vendoritemnumber AS prk_item, pd.itemdescription, inv.itemclass AS itemgroup, inv.issueunitofmeasure, ps.postatusdescription, pd.dateordered::date AS dateordered, sum(COALESCE(pd.quantity, 0)) AS quantityordered, "max"(pd.cost) AS cost, sum(
+        CASE
+            WHEN pd.received IS NOT NULL THEN pd.quantity
+            ELSE 0
+        END) AS receivedquantity, sum(
+        CASE
+            WHEN pd.received IS NULL THEN pd.quantity
+            ELSE 0
+        END) AS remainingquanity
+   FROM dim.podetail pd
+   JOIN dim.po p ON pd.ponumber = p.ponumber
+   LEFT JOIN dim.inventry inv ON pd.item::text = inv.itemnumber::text
+   LEFT JOIN dim.postatus ps ON p.postatusno = ps.postatusno
+   LEFT JOIN dim.altvendor a ON pd.vendornumber::text = a.vendornumber::text AND pd.item::text = a.itemnumber::text
+  WHERE (p.vendor::text = 'PRK'::text OR p.vendor::text = 'PDI'::text OR p.vendor::text = 'PDINJ'::text) AND (p.postatusno = 0 OR p.postatusno = 2) AND pd.itemdescription::text !~~ '%credit%'::text
+  GROUP BY ps.postatusdescription, pd.ponumber, pd.vendorponumber, pd.item, pd.cribbin, pd.vendoritemnumber, pd.itemdescription, inv.itemclass, inv.issueunitofmeasure, pd.dateordered;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_a_prkopenpurchases TO cloudbeam;
+GRANT SELECT ON tableau.opa_a_prkopenpurchases TO operations;
+
+
+COMMIT;

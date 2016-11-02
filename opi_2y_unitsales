@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opi_2y_unitsales
+(
+  orderid,
+  ordertype,
+  doctorid,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  productid,
+  productline,
+  quantity,
+  unitprice,
+  totalcharge,
+  isbridge,
+  isanterior
+)
+AS 
+ SELECT DISTINCT o.orderid, o.ordertype, o.doctorid, o.dateinlocaldts, o.dateinvoicedlocaldts, p.productid, p.pf_productline AS productline, oi.quantity, oi.unitprice, oi.totalcharge, oi.isbridge, oi1.isanterior
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+   JOIN cal.orderitem oi1 ON oi.orderid = oi1.orderid AND oi.orderproductid = oi1.orderproductid
+  WHERE o.dateinvoicedlocaldts >= '2013-01-01 00:00:00'::timestamp without time zone AND o.ordertype::text = 'New'::character varying::text;
+
+
+GRANT SELECT ON tableau.opi_2y_unitsales TO _anthonyo;
+GRANT SELECT ON tableau.opi_2y_unitsales TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opi_2y_unitsales TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opi_2y_unitsales TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opi_2y_unitsales TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,63 @@
+CREATE OR REPLACE VIEW tableau.dev_fct_cam_malcolm
+(
+  millingjobuid,
+  millinglocationid,
+  isautopilot,
+  millingjobstatus,
+  casestatus,
+  updatedate,
+  accountname,
+  locationstartdate,
+  locationenddate,
+  locationinserteddate,
+  locationprocesseddate,
+  millmachinetype,
+  millmachineid,
+  millmachineserialnumber,
+  millmachinelocationid,
+  millingtechnicianid,
+  millingtechnicianlocationid,
+  blockid,
+  blockmaterial,
+  restorationtype,
+  blockheight,
+  stockenlargementfactor,
+  shade,
+  orderid,
+  totalunits,
+  quantity,
+  toothstr,
+  datein,
+  dateinvoiced,
+  duedate,
+  doctorid,
+  productid,
+  isbridge,
+  productdepartment,
+  productgroup,
+  producttype,
+  productline,
+  pf_isactualunit,
+  actualdaysinlab,
+  maxdaysinlab,
+  isanterior,
+  remakereason,
+  labduedate,
+  isreturned,
+  returnreason,
+  originfacilityid,
+  productionfacilityid,
+  qcrejectreason,
+  qcrejectcategory
+)
+AS 
+ SELECT cam_dev2.millingjobuid, cam_dev2.millinglocationid, cam_dev2.isautopilot, cam_dev2.millingjobstatus, cam_dev2.casestatus, cam_dev2.updatedate, cam_dev2.accountname, cam_dev2.locationstartdate, cam_dev2.locationenddate, cam_dev2.locationinserteddate, cam_dev2.locationprocesseddate, cam_dev2.millmachinetype, cam_dev2.millmachineid, cam_dev2.millmachineserialnumber, cam_dev2.millmachinelocationid, cam_dev2.millingtechnicianid, cam_dev2.millingtechnicianlocationid, cam_dev2.blockid, cam_dev2.blockmaterial, cam_dev2.restorationtype, cam_dev2.blockheight, cam_dev2.stockenlargementfactor, cam_dev2.shade, cam_dev2.orderid, cam_dev2.totalunits, cam_dev2.quantity, cam_dev2.toothstr, cam_dev2.datein, cam_dev2.dateinvoiced, cam_dev2.duedate, cam_dev2.doctorid, cam_dev2.productid, cam_dev2.isbridge, cam_dev2.productdepartment, cam_dev2.productgroup, cam_dev2.producttype, cam_dev2.productline, cam_dev2.pf_isactualunit, cam_dev2.actualdaysinlab, cam_dev2.maxdaysinlab, cam_dev2.isanterior, cam_dev2.remakereason, cam_dev2.labduedate, cam_dev2.isreturned, cam_dev2.returnreason, cam_dev2.originfacilityid, cam_dev2.productionfacilityid, cam_dev2.qcrejectreason, cam_dev2.qcrejectcategory
+   FROM fct.cam_dev2;
+
+
+GRANT SELECT ON tableau.dev_fct_cam_malcolm TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.dev_fct_cam_malcolm TO cloudbeam;
+GRANT SELECT ON tableau.dev_fct_cam_malcolm TO _malcolm;
+
+
+COMMIT;

@@ -1,0 +1,64 @@
+CREATE OR REPLACE VIEW tableau.sls_a_customerexp_v2
+(
+  doctorid,
+  contactedon,
+  sales3monthprior,
+  cases3monthprior,
+  units3monthprior,
+  sales6monthprior,
+  cases6monthprior,
+  units6monthprior,
+  sales3monthafter,
+  cases3monthafter,
+  units3monthafter,
+  sales6monthafter,
+  cases6monthafter,
+  units6monthafter
+)
+AS 
+ SELECT trep.doctorid, trep.contactedon, trep.sales3monthprior, trep.cases3monthprior, trep.units3monthprior, sixp.sales6monthprior, sixp.cases6monthprior, sixp.units6monthprior, trea.sales3monthafter, trea.cases3monthafter, trea.units3monthafter, sixa.sales6monthafter, sixa.cases6monthafter, sixa.units6monthafter
+   FROM ( SELECT a.doctorid, sum(a.totalcharge) AS sales3monthprior, count(DISTINCT a.orderid) AS cases3monthprior, sum(a.quantity) AS units3monthprior, a.contactdts AS contactedon
+           FROM ( SELECT DISTINCT a.doctorid, c.totalcharge, c.orderid, date(b.messagecreateddate) AS contactdts, c.quantity
+                   FROM fct."order" a
+              LEFT JOIN import.rds_predictiveanalysis_callscripts b ON b.datamodel_accountid::text = a.doctorid::text
+         LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+        WHERE date(b.messagecreateddate) IS NOT NULL AND a.dateinvoicedlocaldts > date_add('month'::character varying::text, - 3::bigint, date(b.messagecreateddate)::timestamp without time zone) AND a.dateinvoicedlocaldts < date(b.messagecreateddate) AND upper(b.callstatus_wording::text) = 'REACHED - COMPLETED'::text
+        ORDER BY a.orderid) a
+          GROUP BY a.doctorid, a.contactdts
+          ORDER BY a.doctorid) trep
+   LEFT JOIN ( SELECT a.doctorid, sum(a.totalcharge) AS sales6monthprior, count(DISTINCT a.orderid) AS cases6monthprior, sum(a.quantity) AS units6monthprior, a.contactdts AS contactedon
+           FROM ( SELECT DISTINCT a.doctorid, c.totalcharge, c.orderid, date(b.messagecreateddate) AS contactdts, c.quantity
+                   FROM fct."order" a
+              LEFT JOIN import.rds_predictiveanalysis_callscripts b ON b.datamodel_accountid::text = a.doctorid::text
+         LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+        WHERE date(b.messagecreateddate) IS NOT NULL AND a.dateinvoicedlocaldts > date_add('month'::character varying::text, - 6::bigint, date(b.messagecreateddate)::timestamp without time zone) AND a.dateinvoicedlocaldts < date(b.messagecreateddate) AND upper(b.callstatus_wording::text) = 'REACHED - COMPLETED'::text
+        ORDER BY a.orderid) a
+          GROUP BY a.doctorid, a.contactdts
+          ORDER BY a.doctorid) sixp ON trep.doctorid::text = sixp.doctorid::text AND trep.contactedon = sixp.contactedon
+   LEFT JOIN ( SELECT a.doctorid, sum(a.totalcharge) AS sales3monthafter, count(DISTINCT a.orderid) AS cases3monthafter, sum(a.quantity) AS units3monthafter, a.contactdts AS contactedon
+      FROM ( SELECT DISTINCT a.doctorid, c.totalcharge, c.orderid, date(b.messagecreateddate) AS contactdts, c.quantity
+              FROM fct."order" a
+         LEFT JOIN import.rds_predictiveanalysis_callscripts b ON b.datamodel_accountid::text = a.doctorid::text
+    LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+   WHERE date(b.messagecreateddate) IS NOT NULL AND a.dateinvoicedlocaldts > date(b.messagecreateddate) AND a.dateinvoicedlocaldts < date_add('month'::character varying::text, 3::bigint, date(b.messagecreateddate)::timestamp without time zone) AND upper(b.callstatus_wording::text) = 'REACHED - COMPLETED'::text
+   ORDER BY a.orderid) a
+     GROUP BY a.doctorid, a.contactdts
+     ORDER BY a.doctorid) trea ON trep.doctorid::text = trea.doctorid::text AND trep.contactedon = trea.contactedon
+   LEFT JOIN ( SELECT a.doctorid, sum(a.totalcharge) AS sales6monthafter, count(DISTINCT a.orderid) AS cases6monthafter, sum(a.quantity) AS units6monthafter, a.contactdts AS contactedon
+   FROM ( SELECT DISTINCT a.doctorid, c.totalcharge, c.orderid, date(b.messagecreateddate) AS contactdts, c.quantity
+           FROM fct."order" a
+      LEFT JOIN import.rds_predictiveanalysis_callscripts b ON b.datamodel_accountid::text = a.doctorid::text
+   LEFT JOIN fct.orderitem c ON a.orderid = c.orderid
+  WHERE date(b.messagecreateddate) IS NOT NULL AND a.dateinvoicedlocaldts > date(b.messagecreateddate) AND a.dateinvoicedlocaldts < date_add('month'::character varying::text, 6::bigint, date(b.messagecreateddate)::timestamp without time zone) AND upper(b.callstatus_wording::text) = 'REACHED - COMPLETED'::text
+  ORDER BY a.orderid) a
+  GROUP BY a.doctorid, a.contactdts
+  ORDER BY a.doctorid) sixa ON trep.doctorid::text = sixa.doctorid::text AND trep.contactedon = sixa.contactedon;
+
+
+GRANT SELECT ON tableau.sls_a_customerexp_v2 TO _lucy;
+GRANT SELECT ON tableau.sls_a_customerexp_v2 TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.sls_a_customerexp_v2 TO cloudbeam;
+GRANT SELECT ON tableau.sls_a_customerexp_v2 TO _ops;
+
+
+COMMIT;

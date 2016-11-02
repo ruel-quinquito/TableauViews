@@ -1,0 +1,29 @@
+CREATE OR REPLACE VIEW tableau.opa_a_prkissuedfromstock
+(
+  item,
+  cribbin,
+  vendornumber,
+  description1,
+  transdate,
+  typedescription,
+  prk_item,
+  unitofmeasure,
+  pf_productline,
+  quantity,
+  itemgroup,
+  vendor
+)
+AS 
+ SELECT DISTINCT t.item, t.cribbin, inv.vendornumber, inv.description1, t.transdate, t.typedescription, av.vendoritemnumber AS prk_item, inv.issueunitofmeasure AS unitofmeasure, p.pf_productline, t.quantity, inv.itemclass AS itemgroup, inv.vendornumber AS vendor
+   FROM dim.trans t
+   LEFT JOIN dim.altvendor av ON t.item::text = av.itemnumber::text AND av.vendornumber::text = 'PRK'::text
+   LEFT JOIN dim.inventry inv ON t.item::text = inv.itemnumber::text
+   LEFT JOIN dim.products p ON p.productid::text = av.vendoritemnumber::text
+  WHERE (inv.vendornumber::text = 'PRK'::text OR inv.vendornumber::text = 'PDI'::text OR inv.vendornumber::text = 'PDINJ'::text) AND (t.typedescription::text = 'ISSUE'::text OR t.typedescription::text = 'RETN'::text OR t.typedescription::text = 'RETNW'::text OR t.typedescription::text = 'CANCL'::text);
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_a_prkissuedfromstock TO cloudbeam;
+GRANT SELECT ON tableau.opa_a_prkissuedfromstock TO operations;
+
+
+COMMIT;

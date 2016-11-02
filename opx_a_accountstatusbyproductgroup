@@ -1,0 +1,35 @@
+CREATE OR REPLACE VIEW tableau.opx_a_accountstatusbyproductgroup
+(
+  doctorid,
+  originfacilityid,
+  accountproductgroupstatusseqid,
+  orderid,
+  pf_productgroup,
+  pf_productline,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  productgroupfirst,
+  productgrouprestart,
+  productgrouprestartseqid,
+  productgrouplastinvoiced,
+  productgrouplastin,
+  masteraccountid,
+  masteraccountoriginfacilityid,
+  orderproductid,
+  productid
+)
+AS 
+ SELECT a.doctorid, a.originfacilityid, a.accountproductgroupstatusseqid, a.orderid, a.pf_productgroup, p.pf_productline, a.dateinlocaldts, a.dateinvoicedlocaldts, a.productgroupfirst, a.productgrouprestart, a.productgrouprestartseqid, a.productgrouplastinvoiced, a.productgrouplastin, a.masteraccountid, a.masteraccountoriginfacilityid, a.orderproductid, a.productid
+   FROM cal.accountstatusbyproductgroup a
+   LEFT JOIN dim.products p ON a.productid::text = p.productid::text
+  WHERE a.dateinvoicedlocaldts >= (( SELECT getdate() - '3 years'::interval));
+
+
+GRANT SELECT ON tableau.opx_a_accountstatusbyproductgroup TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_accountstatusbyproductgroup TO executive;
+GRANT SELECT ON tableau.opx_a_accountstatusbyproductgroup TO _lucy;
+GRANT SELECT ON tableau.opx_a_accountstatusbyproductgroup TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_a_accountstatusbyproductgroup TO cloudbeam;
+
+
+COMMIT;

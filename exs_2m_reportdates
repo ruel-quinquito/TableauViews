@@ -1,0 +1,24 @@
+CREATE OR REPLACE VIEW tableau.exs_2m_reportdates
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  reportstartdate_lastmonthsales,
+  reportenddate_lastmonthsales,
+  reportstartdate_2mthsbackcostqty,
+  reportenddate_2mthsbackcostqty,
+  reportstartdate_ytdsales,
+  reportenddate_ytdsales,
+  reportstartdate_ytdcostqty,
+  reportenddate_ytdcostqty,
+  rundate
+)
+AS 
+ SELECT reportdates.recordinsertedlocaldts, reportdates.recordmodifiedlocaldts, reportdates.reportstartdate_lastmonthsales, reportdates.reportenddate_lastmonthsales, reportdates.reportstartdate_2mthsbackcostqty, reportdates.reportenddate_2mthsbackcostqty, reportdates.reportstartdate_ytdsales, reportdates.reportenddate_ytdsales, reportdates.reportstartdate_ytdcostqty, reportdates.reportenddate_ytdcostqty, reportdates.rundate
+   FROM fct.reportdates;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.exs_2m_reportdates TO cloudbeam;
+GRANT SELECT ON tableau.exs_2m_reportdates TO operations;
+
+
+COMMIT;

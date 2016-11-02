@@ -1,0 +1,50 @@
+CREATE OR REPLACE VIEW tableau.opa_a_evalbyunitgroup
+(
+  orderid,
+  doctorid,
+  ordertype,
+  dateinvoiced,
+  evalscandate,
+  patientname,
+  question,
+  answer,
+  answerclass,
+  originfacility,
+  productionfacility,
+  productid,
+  quantity,
+  productgroup,
+  productline,
+  producttype,
+  departmentid,
+  unitgroupid,
+  marketingmajor,
+  marketingminor,
+  remakereason,
+  remakecategory,
+  toothstr,
+  tooth,
+  toothlocation
+)
+AS 
+ SELECT DISTINCT o.orderid, o.doctorid, o.ordertype, o.dateinvoicedlocaldts AS dateinvoiced, ed.evalresponsereceiveddts AS evalscandate, o.patientfirstname::text + ' '::character varying::text + o.patientlastname::text AS patientname, ed.evalquestion AS question, ed.evalanswer AS answer, ed.evalanswerclass AS answerclass, o.originfacility, oi.productionfacility, p.productid, oi.quantity, p.pf_productgroup AS productgroup, p.pf_productline AS productline, p.pf_producttype AS producttype, p.pf_departmentid AS departmentid, p.unitgroupid, p.marketingmajor, p.marketingminor, oi.remakereason, p.remakecategory, oi.toothstr, ot.tooth, 
+        CASE
+            WHEN oi1.isanterior::text = 1::character varying::text THEN 'anterior'::character varying
+            WHEN oi1.isanterior::text = 0::character varying::text THEN 'posterior'::character varying
+            ELSE NULL::character varying
+        END AS toothlocation
+   FROM fct."order" o
+   LEFT JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   LEFT JOIN dim.products p ON oi.productid::text = p.productid::text
+   LEFT JOIN fct.caseevaluationsurvey ed ON o.orderid = ed.evalorderid
+   LEFT JOIN cal.orderteeth ot ON o.orderid = ot.orderid AND oi.toothstr::text = ot.toothstr::text
+   LEFT JOIN cal.orderitem oi1 ON oi1.orderid = oi.orderid AND oi1.orderproductid = oi.orderproductid
+  WHERE ed.evalquestion::text <> 'please contact me'::character varying::text AND ed.evalresponsereceiveddts >= (( SELECT getdate() - '2 years'::interval));
+
+
+GRANT SELECT ON tableau.opa_a_evalbyunitgroup TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_a_evalbyunitgroup TO cloudbeam;
+GRANT SELECT ON tableau.opa_a_evalbyunitgroup TO _ops;
+
+
+COMMIT;

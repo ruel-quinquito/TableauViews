@@ -1,0 +1,28 @@
+CREATE OR REPLACE VIEW tableau.css_a_ciscoresourcesandskill
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  resourcename,
+  extension,
+  dateinactiveresource,
+  teamname,
+  isactiveteam,
+  competencelevel,
+  isactiveskillmapping,
+  skillname,
+  isactiveskillgroup
+)
+AS 
+ SELECT ciscoresourcesandskill.recordinsertedlocaldts, COALESCE(ciscoresourcesandskill.recordmodifiedlocaldts, ciscoresourcesandskill.recordinsertedlocaldts) AS recordmodifiedlocaldts, ciscoresourcesandskill.resourcename, ciscoresourcesandskill.extension, ciscoresourcesandskill.dateinactiveresource, ciscoresourcesandskill.teamname, ciscoresourcesandskill.isactiveteam, ciscoresourcesandskill.competencelevel, ciscoresourcesandskill.isactiveskillmapping, ciscoresourcesandskill.skillname, ciscoresourcesandskill.isactiveskillgroup
+   FROM fct.ciscoresourcesandskill
+  WHERE ciscoresourcesandskill.isactiveskill::text = 1::text AND ciscoresourcesandskill.isactiveresource::text = 1::text;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.css_a_ciscoresourcesandskill TO _tableau;
+GRANT SELECT ON tableau.css_a_ciscoresourcesandskill TO _anthonyo;
+GRANT SELECT ON tableau.css_a_ciscoresourcesandskill TO _lucy;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.css_a_ciscoresourcesandskill TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.css_a_ciscoresourcesandskill TO _ops;
+
+
+COMMIT;

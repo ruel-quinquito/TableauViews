@@ -1,0 +1,42 @@
+CREATE OR REPLACE VIEW tableau.pyd_a_employeepayhistory
+(
+  employeeid,
+  firstname,
+  lastname,
+  jobtitle,
+  jobtitledescription,
+  locationid,
+  facilityid,
+  kronoslocationid,
+  divisionid,
+  divisiongpdescription,
+  divisionkronosdescription,
+  departmentcode,
+  departmentdescription,
+  buildingnamegp,
+  supervisoremployeeid,
+  originalhiredate,
+  adjustedhiredate,
+  senioritydate,
+  payrate,
+  payratechangedate
+)
+AS 
+ SELECT DISTINCT g.employeeid, g.firstname, g.lastname, g.jobtitle, g.jobtitledescription, g.locationid, g.facilityid, g.kronoslocationid, g.divisionid, g.divisiongpdescription, g.divisionkronosdescription, g.departmentcode, g.departmentdescription, g.buildingnamegp, g.supervisoremployeeid, g.originalhiredate, g.adjustedhiredate, g.senioritydate, x.payrate, x.payratechangedate
+   FROM fct.gpemployee g
+   LEFT JOIN ( SELECT DISTINCT a.employeeid, a.jobtitle, a.payratechangedate, b.payrate
+           FROM ( SELECT DISTINCT gpemployeepayhistorydetail.employeeid, gpemployeepayhistorydetail.jobtitle, min(gpemployeepayhistorydetail.checkdate) AS payratechangedate
+                   FROM pay.gpemployeepayhistorydetail
+                  WHERE gpemployeepayhistorydetail.payrollcode::text = 'HOURLY'::text
+                  GROUP BY gpemployeepayhistorydetail.employeeid, gpemployeepayhistorydetail.jobtitle) a
+      JOIN pay.gpemployeepayhistorydetail b ON a.employeeid::text = b.employeeid::text AND a.jobtitle::text = b.jobtitle::text AND a.payratechangedate = b.checkdate AND b.payrollcode::text = 'HOURLY'::text) x ON g.employeeid::text = x.employeeid::text AND g.jobtitle::text = x.jobtitle::text
+  WHERE g.hrstatus::text = 'Active'::text;
+
+
+GRANT SELECT ON tableau.pyd_a_employeepayhistory TO _anthonyo;
+GRANT SELECT ON tableau.pyd_a_employeepayhistory TO _lucy;
+GRANT SELECT ON tableau.pyd_a_employeepayhistory TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.pyd_a_employeepayhistory TO cloudbeam;
+
+
+COMMIT;

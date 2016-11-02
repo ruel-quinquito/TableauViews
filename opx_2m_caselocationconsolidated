@@ -1,0 +1,32 @@
+CREATE OR REPLACE VIEW tableau.opx_2m_caselocationconsolidated
+(
+  orderid,
+  caselocationseqid,
+  processlabellocationid,
+  scantype,
+  facilityid,
+  building,
+  department,
+  zone,
+  process,
+  begindatelocaldts,
+  enddatelocaldts,
+  insertedby,
+  updatedby
+)
+AS 
+ SELECT clc.orderid, clc.caselocationseqid, clc.processlabellocationid, clc.scantype, clc.facilityid, clc.building, clc.department, clc."zone", clc.process, clc.begindatelocaldts, clc.enddatelocaldts, upper(clc.insertedby::text) AS insertedby, upper(clc.updatedby::text) AS updatedby
+   FROM fct.caselocationconsolidated clc
+   JOIN ( SELECT clc.orderid
+           FROM fct.caselocationconsolidated clc
+          WHERE clc.caselocationseqid = 1 AND clc.begindatelocaldts >= date_add('month'::character varying::text, - 2::bigint, date_trunc('month'::character varying::text, 'now'::character varying::date::timestamp without time zone))) x ON x.orderid = clc.orderid;
+
+
+GRANT SELECT ON tableau.opx_2m_caselocationconsolidated TO _anthonyo;
+GRANT SELECT ON tableau.opx_2m_caselocationconsolidated TO _lucy;
+GRANT SELECT ON tableau.opx_2m_caselocationconsolidated TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_2m_caselocationconsolidated TO cloudbeam;
+GRANT SELECT ON tableau.opx_2m_caselocationconsolidated TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,45 @@
+CREATE OR REPLACE VIEW tableau.opx_a_orders
+(
+  orderid,
+  ordertypeid,
+  ordertype,
+  doctorid,
+  customertypeid,
+  customercategory,
+  datein,
+  dateinvoiced,
+  postdatelocaldts,
+  sourcesystem,
+  sourcesystemscanner,
+  productid,
+  transactiontype,
+  pf_productline,
+  pf_departmentid,
+  pf_isactualunit,
+  isanterior,
+  isbridge,
+  quantity,
+  originlocationbuilding,
+  departmentid,
+  enteredby,
+  originfacility
+)
+AS 
+ SELECT o.orderid, o.ordertypeid, o.ordertype, o.doctorid, d.customertypeid, d.customercategory, o.dateinlocaldts AS datein, o.dateinvoicedlocaldts AS dateinvoiced, o.postdatelocaldts, o1.sourcesystem, o1.sourcesystemscanner, oi.productid, oi.transactiontype, p.pf_productline, p.pf_departmentid, p.pf_isactualunit, oi1.isanterior, oi.isbridge, oi.quantity, cl.originlocationbuilding, p.departmentid, o.enteredby, o.originfacility
+   FROM fct."order" o
+   JOIN cal."order" o1 ON o1.orderid = o.orderid
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid
+   JOIN cal.orderitem oi1 ON oi1.orderid = oi.orderid AND oi1.orderproductid = oi.orderproductid
+   JOIN dim.doctors d ON d.doctorid::text = o.doctorid::text
+   JOIN dim.products p ON p.productid::text = oi.productid::text
+   JOIN cal.caselocation cl ON cl.orderid = o.orderid AND cl.caselocationsequenceid = 1;
+
+
+GRANT SELECT ON tableau.opx_a_orders TO _anthonyo;
+GRANT SELECT ON tableau.opx_a_orders TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opx_a_orders TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_a_orders TO cloudbeam;
+GRANT REFERENCES, INSERT, TRIGGER, UPDATE, RULE, SELECT, DELETE ON tableau.opx_a_orders TO _ops;
+
+
+COMMIT;

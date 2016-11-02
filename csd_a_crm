@@ -1,0 +1,45 @@
+CREATE OR REPLACE VIEW tableau.csd_a_crm
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  id,
+  ticketnumber,
+  ticketstatus,
+  tickettitle,
+  ticketcontact,
+  ticketteamowner,
+  ticketsubject,
+  ticketaccountdepartment,
+  ticketlocation,
+  tickettype,
+  ticketowner,
+  ticketescalatedto,
+  ticketbusinessunit,
+  ticketcreatedon,
+  ticketmodifiedon,
+  ticketassignmentstatus,
+  ticketpriority,
+  ticketcreatedby,
+  ticketdescription,
+  ticketresolution,
+  ticketkbarticle,
+  tickettransferfromcsr,
+  tickettimespentminutes,
+  ticketbilledserviceunits,
+  ticketaccountnumber,
+  tasksubjectgroup,
+  taskcreatedby,
+  taskactivitytype,
+  taskowner,
+  tasksubject,
+  taskactivitystatus,
+  taskcreatedon,
+  taskactualstartdate,
+  taskactualenddate,
+  tasktimespent
+)
+AS 
+ SELECT crmdynamics.recordinsertedlocaldts, crmdynamics.recordmodifiedlocaldts, crmdynamics.id, crmdynamics.ticketnumber, crmdynamics.ticketstatus, crmdynamics.tickettitle, crmdynamics.ticketcontact, crmdynamics.ticketteamowner, crmdynamics.ticketsubject, crmdynamics.ticketaccountdepartment, crmdynamics.ticketlocation, crmdynamics.tickettype, crmdynamics.ticketowner, crmdynamics.ticketescalatedto, crmdynamics.ticketbusinessunit, crmdynamics.ticketcreatedon, crmdynamics.ticketmodifiedon, crmdynamics.ticketassignmentstatus, crmdynamics.ticketpriority, crmdynamics.ticketcreatedby, crmdynamics.ticketdescription, crmdynamics.ticketresolution, crmdynamics.ticketkbarticle, crmdynamics.tickettransferfromcsr, crmdynamics.tickettimespentminutes, crmdynamics.ticketbilledserviceunits, crmdynamics.ticketaccountnumber, crmdynamics.tasksubjectgroup, crmdynamics.taskcreatedby, crmdynamics.taskactivitytype, crmdynamics.taskowner, crmdynamics.tasksubject, crmdynamics.taskactivitystatus, crmdynamics.taskcreatedon, crmdynamics.taskactualstartdate, crmdynamics.taskactualenddate, crmdynamics.tasktimespent
+   FROM fct.crmdynamics;
+
+COMMIT;

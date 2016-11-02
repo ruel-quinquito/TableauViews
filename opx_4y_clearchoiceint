@@ -1,0 +1,39 @@
+CREATE OR REPLACE VIEW tableau.opx_4y_clearchoiceint
+(
+  orderid,
+  doctorid,
+  groupid,
+  practicename,
+  dateinvoicedlocaldts,
+  pf_productgroup,
+  pf_productline,
+  pf_isactualunit,
+  pf_departmentid,
+  productid,
+  ordertype,
+  remakecategory,
+  remakereason,
+  quantity,
+  charge,
+  tax,
+  revenue,
+  transactiontype,
+  ordertypeid,
+  inhousesale
+)
+AS 
+ SELECT o.orderid, d.doctorid, d.groupid, d.practicename, o.dateinvoicedlocaldts, p.pf_productgroup, p.pf_productline, p.pf_isactualunit, p.pf_departmentid, p.productid, o.ordertype, p.remakecategory, o.remakereason, oi.quantity, COALESCE(oi.totalcharge, 0::numeric::numeric(18,0)) AS charge, COALESCE(oi.totaltax, 0::numeric::numeric(18,0)) AS tax, oi.totalcharge - COALESCE(oi.totaltax, 0::numeric::numeric(18,0)) AS revenue, oi.transactiontype, o.ordertypeid, o.inhousesale
+   FROM fct."order" o
+   JOIN fct.orderitem oi ON o.orderid = oi.orderid
+   JOIN dim.products p ON oi.productid::text = p.productid::text
+   JOIN dim.doctors d ON o.doctorid::text = d.doctorid::text
+  WHERE (d.groupid::text = 'ClearChoic'::character varying::text OR d.groupid::text = 'Clearchoic'::character varying::text OR d.groupid::text = 'clearchoic'::character varying::text) AND o.dateinvoicedlocaldts >= (( SELECT getdate() - '4 years'::interval));
+
+
+GRANT SELECT ON tableau.opx_4y_clearchoiceint TO _anthonyo;
+GRANT SELECT ON tableau.opx_4y_clearchoiceint TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opx_4y_clearchoiceint TO cloudbeam;
+GRANT SELECT ON tableau.opx_4y_clearchoiceint TO _ops;
+
+
+COMMIT;

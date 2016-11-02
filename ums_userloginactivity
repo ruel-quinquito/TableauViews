@@ -1,0 +1,23 @@
+CREATE OR REPLACE VIEW tableau.ums_userloginactivity
+(
+  user_name,
+  user_email,
+  user_groupid,
+  user_groupname,
+  user_logindate,
+  times_logged_in
+)
+AS 
+ SELECT upper((li.user_lastname::text || ', '::character varying::text) || li.user_firstname::text)::character varying AS user_name, upper(li.user_email::text) AS user_email, li.user_groupid, gn.groupname AS user_groupname, li.user_lastlogin::date AS user_logindate, count(1) AS times_logged_in
+   FROM import.cp_umsuserloginlogout li
+   LEFT JOIN import.cp_umsgroupaddremove gn ON li.user_groupid::text = gn.groupid::text
+  WHERE li.meta_action::text = 'UserLogin'::text
+  GROUP BY upper((li.user_lastname::text || ', '::character varying::text) || li.user_firstname::text)::character varying, upper(li.user_email::text), li.user_groupid, gn.groupname, li.user_lastlogin::date;
+
+
+GRANT SELECT ON tableau.ums_userloginactivity TO _lucy;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.ums_userloginactivity TO cloudbeam;
+GRANT SELECT ON tableau.ums_userloginactivity TO _ops;
+
+
+COMMIT;

@@ -1,0 +1,64 @@
+CREATE OR REPLACE VIEW tableau.dim_a_accounts
+(
+  accountid,
+  accounttypeid,
+  accounttype,
+  lab,
+  licensenumber,
+  glaccountid,
+  prkaccountid,
+  accountname,
+  practicename,
+  printoninvoice,
+  firstname,
+  middlename,
+  lastname,
+  address1,
+  address2,
+  address3,
+  city,
+  state,
+  zipcode,
+  zipcode2,
+  country,
+  billingaddress1,
+  billingaddress2,
+  billingaddress3,
+  billingcity,
+  billingstate,
+  billingzipcode,
+  billingzipcode2,
+  billingcountry,
+  shippingaddress1,
+  shippingaddress2,
+  shippingaddress3,
+  shippingcity,
+  shippingstate,
+  shippingzipcode,
+  shippingzipcode2,
+  shippingcountry,
+  codonly,
+  officecontact,
+  workphone,
+  homephone,
+  email,
+  groupid,
+  groupname,
+  hasexemptioncertificate,
+  territoryid,
+  salespersonid,
+  inhouseaccount
+)
+AS 
+ SELECT a.accountid, a.accounttypeid, a.accounttype, a.lab, a.licensenumber, a.glaccountid, a.prkaccountid, a.accountname, a.practicename, a.printoninvoice, a.firstname, a.middlename, a.lastname, a.address1, a.address2, a.address3, a.city, a.state, a.zipcode, a.zipcode2, a.country, a.billingaddress1, a.billingaddress2, a.billingaddress3, a.billingcity, a.billingstate, a.billingzipcode, a.billingzipcode2, a.billingcountry, a.shippingaddress1, a.shippingaddress2, a.shippingaddress3, a.shippingcity, a.shippingstate, a.shippingzipcode, a.shippingzipcode2, a.shippingcountry, a.codonly, a.officecontact, a.workphone, a.homephone, a.email, a.groupid, a.groupname, a.hasexemptioncertificate, a.territoryid, a.salespersonid, a.inhouseaccount
+   FROM dim.accounts a;
+
+
+GRANT SELECT ON tableau.dim_a_accounts TO _anthonyo;
+GRANT SELECT ON tableau.dim_a_accounts TO _lucy;
+GRANT SELECT ON tableau.dim_a_accounts TO _exec;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.dim_a_accounts TO cloudbeam;
+GRANT SELECT ON tableau.dim_a_accounts TO _ops;
+
+
+COMMIT;

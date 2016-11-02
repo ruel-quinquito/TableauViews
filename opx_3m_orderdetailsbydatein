@@ -1,0 +1,111 @@
+CREATE OR REPLACE VIEW tableau.opx_3m_orderdetailsbydatein
+(
+  orderid,
+  originfacility,
+  productionfacility,
+  ordertype,
+  datein,
+  enteredby,
+  pannumber,
+  panid,
+  duedate,
+  dateinvoiced,
+  glpostdate,
+  invoicedby,
+  orderdiscountpercent,
+  orderdiscountreason,
+  casestatus,
+  orderfullcharge,
+  orderdiscount,
+  orderremakediscount,
+  ordertotaltax,
+  ordertotalcharge,
+  orderremakeid,
+  orderremakereason,
+  doctorid,
+  patientfirstname,
+  patientlastname,
+  inhousesale,
+  shade,
+  isrush,
+  rushid,
+  rushdescription,
+  inboundcarrier,
+  inboundtrackingnumber,
+  shippingtargetdate,
+  outboundcarrier,
+  outboundtrackingnumber,
+  shippingaddressline1,
+  shippingaddressline2,
+  shippingaddresscity,
+  shippingaddressstate,
+  shippingaddresszipcode,
+  shippingaddresscountry,
+  maxdaysinlab,
+  labduedate,
+  actualdaysinlab,
+  cod,
+  sourcesystem,
+  sourcesystemscanner,
+  orderitemid,
+  orderitemsequenceid,
+  transactiontype,
+  productid,
+  toothstr,
+  isbridge,
+  isanterior,
+  bodyshade,
+  stumpshade,
+  gingivalshade,
+  incisalshade,
+  quantity,
+  unitprice,
+  discount,
+  remakediscount,
+  totalcharge,
+  totaltax,
+  orderitemremakeid,
+  orderitemremakereason,
+  origorderid,
+  origorderdateinlocaldts,
+  origorderdateinvoicedlocaldts,
+  linkedorderid,
+  linkedordertype,
+  linkedorderdateinlocaldts,
+  linkedorderdateinvoicedlocaldts,
+  linkedorderremakeid,
+  linkedorderremakereason,
+  returnorderid,
+  returnordertype,
+  returnorderdateinlocaldts,
+  returnorderdateinvoicedlocaldts,
+  returnorderremakeid,
+  returnorderremakereason,
+  departmentid,
+  pf_isactualunit,
+  pf_departmentid,
+  pf_productline,
+  customertypeid
+)
+AS 
+ SELECT a.orderid, a.originfacility, a.productionfacility, a.ordertype, a.datein, a.enteredby, a.pannumber, a.panid, a.duedate, a.dateinvoiced, a.glpostdate, a.invoicedby, a.orderdiscountpercent, a.orderdiscountreason, a.casestatus, a.orderfullcharge, a.orderdiscount, a.orderremakediscount, a.ordertotaltax, a.ordertotalcharge, a.orderremakeid, a.orderremakereason, a.doctorid, a.patientfirstname, a.patientlastname, a.inhousesale, a.shade, a.isrush, a.rushid, a.rushdescription, a.inboundcarrier, a.inboundtrackingnumber, a.shippingtargetdate, a.outboundcarrier, a.outboundtrackingnumber, a.shippingaddressline1, a.shippingaddressline2, a.shippingaddresscity, a.shippingaddressstate, a.shippingaddresszipcode, a.shippingaddresscountry, a.maxdaysinlab, a.labduedate, a.actualdaysinlab, a.cod, a.sourcesystem, a.sourcesystemscanner, a.orderitemid, a.orderitemsequenceid, a.transactiontype, a.productid, a.toothstr, a.isbridge, a.isanterior, a.bodyshade, a.stumpshade, a.gingivalshade, a.incisalshade, a.quantity, a.unitprice, a.discount, a.remakediscount, a.totalcharge, a.totaltax, a.orderitemremakeid, a.orderitemremakereason, a.origorderid, a.origorderdateinlocaldts, a.origorderdateinvoicedlocaldts, a.linkedorderid, a.linkedordertype, a.linkedorderdateinlocaldts, a.linkedorderdateinvoicedlocaldts, a.linkedorderremakeid, a.linkedorderremakereason, a.returnorderid, a.returnordertype, a.returnorderdateinlocaldts, a.returnorderdateinvoicedlocaldts, a.returnorderremakeid, a.returnorderremakereason, p.departmentid, p.pf_isactualunit, p.pf_departmentid, p.pf_productline, d.customertypeid
+   FROM sum.orderdetails_activecases a
+   LEFT JOIN dim.products p ON a.productid::text = p.productid::text
+   LEFT JOIN dim.doctors d ON a.doctorid::text = d.doctorid::text
+  WHERE a.datein >= (( SELECT getdate() - '3 mons'::interval))
+UNION 
+ SELECT b.orderid, b.originfacility, b.productionfacility, b.ordertype, b.datein, b.enteredby, b.pannumber, b.panid, b.duedate, b.dateinvoiced, b.glpostdate, b.invoicedby, b.orderdiscountpercent, b.orderdiscountreason, b.casestatus, b.orderfullcharge, b.orderdiscount, b.orderremakediscount, b.ordertotaltax, b.ordertotalcharge, b.orderremakeid, b.orderremakereason, b.doctorid, b.patientfirstname, b.patientlastname, b.inhousesale, b.shade, b.isrush, b.rushid, b.rushdescription, b.inboundcarrier, b.inboundtrackingnumber, b.shippingtargetdate, b.outboundcarrier, b.outboundtrackingnumber, b.shippingaddressline1, b.shippingaddressline2, b.shippingaddresscity, b.shippingaddressstate, b.shippingaddresszipcode, b.shippingaddresscountry, b.maxdaysinlab, b.labduedate, b.actualdaysinlab, b.cod, b.sourcesystem, b.sourcesystemscanner, b.orderitemid, b.orderitemsequenceid, b.transactiontype, p.productid, b.toothstr, b.isbridge, b.isanterior, b.bodyshade, b.stumpshade, b.gingivalshade, b.incisalshade, b.quantity, b.unitprice, b.discount, b.remakediscount, b.totalcharge, b.totaltax, b.orderitemremakeid, b.orderitemremakereason, b.origorderid, b.origorderdateinlocaldts, b.origorderdateinvoicedlocaldts, b.linkedorderid, b.linkedordertype, b.linkedorderdateinlocaldts, b.linkedorderdateinvoicedlocaldts, b.linkedorderremakeid, b.linkedorderremakereason, b.returnorderid, b.returnordertype, b.returnorderdateinlocaldts, b.returnorderdateinvoicedlocaldts, b.returnorderremakeid, b.returnorderremakereason, p.departmentid, p.pf_isactualunit, p.pf_departmentid, p.pf_productline, d.customertypeid
+   FROM sum.orderdetails_invoicedthreemonths b
+   LEFT JOIN dim.products p ON b.productid::text = p.productid::text
+   LEFT JOIN dim.doctors d ON b.doctorid::text = d.doctorid::text;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opx_3m_orderdetailsbydatein TO _tableau;
+GRANT SELECT ON tableau.opx_3m_orderdetailsbydatein TO _anthonyo;
+GRANT SELECT ON tableau.opx_3m_orderdetailsbydatein TO _lucy;
+GRANT SELECT ON tableau.opx_3m_orderdetailsbydatein TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opx_3m_orderdetailsbydatein TO cloudbeam;
+GRANT SELECT ON tableau.opx_3m_orderdetailsbydatein TO _ops;
+
+
+COMMIT;

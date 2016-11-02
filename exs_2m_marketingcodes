@@ -1,0 +1,19 @@
+CREATE OR REPLACE VIEW tableau.exs_2m_marketingcodes
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  mktgtype,
+  marketingcode,
+  monthyearsent,
+  qtysent
+)
+AS 
+ SELECT marketingcodes.recordinsertedlocaldts, marketingcodes.recordmodifiedlocaldts, marketingcodes.mktgtype, marketingcodes.marketingcode, marketingcodes.monthyearsent, marketingcodes.qtysent
+   FROM agg.marketingcodes;
+
+
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.exs_2m_marketingcodes TO cloudbeam;
+GRANT SELECT ON tableau.exs_2m_marketingcodes TO operations;
+
+
+COMMIT;

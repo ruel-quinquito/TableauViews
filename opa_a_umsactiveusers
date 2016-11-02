@@ -1,0 +1,36 @@
+CREATE OR REPLACE VIEW tableau.opa_a_umsactiveusers
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  messageid,
+  msgtype,
+  created_utc,
+  meta_user_id,
+  meta_user_email,
+  meta_user_groupid,
+  meta_user_groupname,
+  meta_action,
+  user_name,
+  user_id,
+  user_email,
+  user_groupid,
+  user_groupname,
+  user_created,
+  user_lastlogin,
+  user_passwordchanged,
+  user_role,
+  user_disabled,
+  user_deleted
+)
+AS 
+ SELECT fct_ums_messages.recordinsertedlocaldts, fct_ums_messages.recordmodifiedlocaldts, fct_ums_messages.messageid, fct_ums_messages.msgtype, fct_ums_messages.created_utc, fct_ums_messages.meta_user_id, fct_ums_messages.meta_user_email, fct_ums_messages.meta_user_groupid, fct_ums_messages.meta_user_groupname, fct_ums_messages.meta_action, fct_ums_messages.user_name, fct_ums_messages.user_id, upper(fct_ums_messages.user_email::text) AS user_email, fct_ums_messages.user_groupid, fct_ums_messages.user_groupname, fct_ums_messages.user_created, fct_ums_messages.user_lastlogin, fct_ums_messages.user_passwordchanged, fct_ums_messages.user_role, fct_ums_messages.user_disabled, fct_ums_messages.user_deleted
+   FROM cp.fct_ums_messages
+  WHERE fct_ums_messages.user_disabled = 0 AND fct_ums_messages.user_deleted = 0;
+
+
+GRANT SELECT ON tableau.opa_a_umsactiveusers TO _lucy;
+GRANT SELECT ON tableau.opa_a_umsactiveusers TO operations;
+GRANT INSERT, SELECT, UPDATE, RULE, DELETE, TRIGGER, REFERENCES ON tableau.opa_a_umsactiveusers TO cloudbeam;
+
+
+COMMIT;

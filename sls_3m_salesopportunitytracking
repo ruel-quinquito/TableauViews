@@ -1,0 +1,38 @@
+CREATE OR REPLACE VIEW tableau.sls_3m_salesopportunitytracking
+(
+  recordinsertedlocaldts,
+  recordmodifiedlocaldts,
+  recordidchecksum,
+  fromtableguid,
+  recordcreatedby,
+  recordcreatedon,
+  recordmodifiedby,
+  recordmodifiedon,
+  doctorid,
+  typeofcall,
+  contacttype,
+  doctorresponse,
+  callcentercallingfrom,
+  recordactivitystatus,
+  notes,
+  finalcomments,
+  recoveredon,
+  notrecoveredreason,
+  ismostrecentstatus,
+  totalcharge,
+  totaltax,
+  dateinvoiced
+)
+AS 
+ SELECT so.recordinsertedlocaldts, COALESCE(so.recordmodifiedlocaldts, so.recordinsertedlocaldts) AS recordmodifiedlocaldts, so.recordidchecksum, so.fromtableguid, so.recordcreatedby, so.recordcreatedon, so.recordmodifiedby, so.recordmodifiedon, so.doctorid, so.typeofcall, so.contacttype, so.doctorresponse, so.callcentercallingfrom, so.recordactivitystatus, so.notes, so.finalcomments, so.recoveredon, so.notrecoveredreason, so.ismostrecentstatus, o3.totalcharge, o3.totaltax, o3.dateinvoiced
+   FROM sum.salesopportunitytracking so
+   LEFT JOIN tableau.opi_3m_orderdetails o3 ON so.doctorid::text = o3.doctorid::text;
+
+
+GRANT SELECT ON tableau.sls_3m_salesopportunitytracking TO _anthonyo;
+GRANT SELECT ON tableau.sls_3m_salesopportunitytracking TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.sls_3m_salesopportunitytracking TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.sls_3m_salesopportunitytracking TO cloudbeam;
+
+
+COMMIT;

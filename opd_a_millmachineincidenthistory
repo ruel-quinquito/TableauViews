@@ -1,0 +1,83 @@
+CREATE OR REPLACE VIEW tableau.opd_a_millmachineincidenthistory
+(
+  millserialid,
+  millmachineid,
+  offlinedate,
+  weekdate,
+  offlinereason,
+  offlinemilltechnician,
+  onlinedate,
+  onlinereason,
+  onlinemilltechnician,
+  totalmindiff,
+  servername,
+  millfacilityid,
+  milllocation,
+  isdifferentreason
+)
+AS 
+ SELECT s.millserialid, m1.millmachineid, m1.millstatuschangedate AS offlinedate, date_trunc('week'::text, m1.millstatuschangedate) AS weekdate, m1.millstatusreason AS offlinereason, upper(m1.milltechnician::text) AS offlinemilltechnician, m2.millstatuschangedate AS onlinedate, m2.millstatusreason AS onlinereason, upper(m2.milltechnician::text) AS onlinemilltechnician, date_diff('second'::character varying::text, m1.millstatuschangedate, m2.millstatuschangedate)::numeric::numeric(18,0) / 60.00 AS totalmindiff, m1.servername, m1.millfacilityid, m1.milllocation, 
+        CASE
+            WHEN m1.millstatusreason::text <> m2.millstatusreason::text THEN 1
+            ELSE 0
+        END AS isdifferentreason
+   FROM ( SELECT COALESCE(o1.servername, o2.servername) AS servername, COALESCE(o1.millserialid, o2.millserialid) AS millserialid, o1.locationrecordid AS offlinerecordid, o2.locationrecordid AS onlinerecordid
+           FROM ( SELECT t1.locationrecordid, t1.servername, t1.millserialid, t1.millstatus, pg_catalog.row_number()
+                  OVER( 
+                  PARTITION BY t1.millserialid
+                  ORDER BY m1.millstatuschangedate) AS seqid
+                   FROM ( SELECT m1.locationrecordid, m1.servername, m1.millserialid, pg_catalog.row_number()
+                          OVER( 
+                          PARTITION BY m1.millserialid
+                          ORDER BY m1.millstatuschangedate) AS seqid, 
+                                CASE
+                                    WHEN m1.millnewstatus::text = 'OnLine'::character varying::text THEN 1
+                                    ELSE 0
+                                END AS millstatus
+                           FROM fct.millmachinestatushistory m1) t1
+              JOIN ( SELECT m1.locationrecordid, m1.servername, m1.millserialid, pg_catalog.row_number()
+                          OVER( 
+                          PARTITION BY m1.millserialid
+                          ORDER BY m1.millstatuschangedate) AS seqid, 
+                                CASE
+                                    WHEN m1.millnewstatus::text = 'OnLine'::character varying::text THEN 1
+                                    ELSE 0
+                                END AS millstatus
+                           FROM fct.millmachinestatushistory m1) t2 ON t2.millserialid::text = t1.millserialid::text AND t2.seqid = (t1.seqid + 1) AND (t1.millstatus + t2.millstatus) = 1
+         JOIN fct.millmachinestatushistory m1 ON m1.locationrecordid = t1.locationrecordid AND m1.servername::text = t1.servername::text AND m1.millserialid::text = t1.millserialid::text) o1
+      LEFT JOIN ( SELECT t1.locationrecordid, t1.servername, t1.millserialid, t1.millstatus, pg_catalog.row_number()
+                  OVER( 
+                  PARTITION BY t1.millserialid
+                  ORDER BY m1.millstatuschangedate) AS seqid
+                   FROM ( SELECT m1.locationrecordid, m1.servername, m1.millserialid, pg_catalog.row_number()
+                          OVER( 
+                          PARTITION BY m1.millserialid
+                          ORDER BY m1.millstatuschangedate) AS seqid, 
+                                CASE
+                                    WHEN m1.millnewstatus::text = 'OnLine'::character varying::text THEN 1
+                                    ELSE 0
+                                END AS millstatus
+                           FROM fct.millmachinestatushistory m1) t1
+              JOIN ( SELECT m1.locationrecordid, m1.servername, m1.millserialid, pg_catalog.row_number()
+                          OVER( 
+                          PARTITION BY m1.millserialid
+                          ORDER BY m1.millstatuschangedate) AS seqid, 
+                                CASE
+                                    WHEN m1.millnewstatus::text = 'OnLine'::character varying::text THEN 1
+                                    ELSE 0
+                                END AS millstatus
+                           FROM fct.millmachinestatushistory m1) t2 ON t2.millserialid::text = t1.millserialid::text AND t2.seqid = (t1.seqid + 1) AND (t1.millstatus + t2.millstatus) = 1
+         JOIN fct.millmachinestatushistory m1 ON m1.locationrecordid = t1.locationrecordid AND m1.servername::text = t1.servername::text AND m1.millserialid::text = t1.millserialid::text) o2 ON o1.servername::text = o2.servername::text AND o2.millserialid::text = o1.millserialid::text AND (o2.seqid - 1) = o1.seqid
+     WHERE o1.millstatus = 0 AND o2.millstatus = 1) s
+   JOIN fct.millmachinestatushistory m1 ON m1.servername::text = s.servername::text AND m1.millserialid::text = s.millserialid::text AND m1.locationrecordid = s.offlinerecordid
+   LEFT JOIN fct.millmachinestatushistory m2 ON m2.servername::text = s.servername::text AND m2.millserialid::text = s.millserialid::text AND m2.locationrecordid = s.onlinerecordid;
+
+
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, INSERT, RULE, UPDATE ON tableau.opd_a_millmachineincidenthistory TO _tableau;
+GRANT SELECT ON tableau.opd_a_millmachineincidenthistory TO _anthonyo;
+GRANT SELECT ON tableau.opd_a_millmachineincidenthistory TO _lucy;
+GRANT SELECT, DELETE, TRIGGER, REFERENCES, RULE, UPDATE, INSERT ON tableau.opd_a_millmachineincidenthistory TO operations;
+GRANT DELETE, TRIGGER, REFERENCES, INSERT, SELECT, UPDATE, RULE ON tableau.opd_a_millmachineincidenthistory TO cloudbeam;
+
+
+COMMIT;
