@@ -1,0 +1,117 @@
+CREATE OR REPLACE VIEW tableau.caselocation_activecaseswithlocationhistory
+(
+  orderid,
+  caselocationsequenceid,
+  originlocationfacilityid,
+  originlocationbuilding,
+  originlocationdepartment,
+  originlocationzone,
+  originlocationprocess,
+  originlocationprocessdescription,
+  lastlocation,
+  locationfacilityid,
+  locationbuilding,
+  locationdepartment,
+  locationzone,
+  locationprocess,
+  locationprocessdescription,
+  locationcheckindate,
+  locationcheckoutdate,
+  assignmentcount,
+  firstassignedto,
+  firstassignedtocart,
+  firstassignmentstartdate,
+  firstassignmentcompleteddate,
+  lastassignedto,
+  lastassignedtocart,
+  lastassignmentstartdate,
+  lastassignmentcompleteddate,
+  datein,
+  duedate,
+  dateinvoiced,
+  rush,
+  pannumber,
+  panid,
+  maxdaysinlab,
+  labduedate,
+  actualdaysinlab,
+  daysremaining,
+  daysremaininggroup,
+  productfacilityid,
+  productdepartment,
+  productsubdepartment,
+  productline,
+  productid,
+  quantity,
+  locationgroup,
+  isgenerated,
+  locationgroupcheckindate,
+  locationgroupdurationinminutes,
+  locationgroupassignment,
+  locationgroupcart
+)
+AS 
+ SELECT clh.orderid, clh.caselocationsequenceid, cll.originlocationfacilityid, cll.originlocationbuilding, cll.originlocationdepartment, cll.originlocationzone, cll.originlocationprocess, cll.originlocationprocessdescription, clh.lastlocation, clh.locationfacilityid, clh.locationbuilding, clh.locationdepartment, clh.locationzone, clh.locationprocess, clh.locationprocessdescription, clh.locationcheckindate, clh.locationcheckoutdate, clh.assignmentcount, clh.firstassignedto, 
+        CASE
+            WHEN charindex('/'::character varying::text, clh.firstassignedto::text) = 2 THEN ('Cart '::character varying::text + "left"(clh.firstassignedto::text, 1))::character varying
+            WHEN charindex('/'::character varying::text, clh.firstassignedto::text) = 3 THEN ('Cart '::character varying::text + "left"(clh.firstassignedto::text, 2))::character varying
+            ELSE NULL::character varying
+        END AS firstassignedtocart, clh.firstassignmentstartdate, clh.firstassignmentcompleteddate, clh.lastassignedto, 
+        CASE
+            WHEN charindex('/'::character varying::text, clh.lastassignedto::text) = 2 THEN ('Cart '::character varying::text + "left"(clh.lastassignedto::text, 1))::character varying
+            WHEN charindex('/'::character varying::text, clh.lastassignedto::text) = 3 THEN ('Cart '::character varying::text + "left"(clh.lastassignedto::text, 2))::character varying
+            ELSE NULL::character varying
+        END AS lastassignedtocart, clh.lastassignmentstartdate, clh.lastassignmentcompleteddate, clh.datein, clh.duedate, clh.dateinvoiced, clh.rush, clh.pannumber, clh.panid, clh.maxdaysinlab, clh.labduedate, clh.actualdaysinlab, clh.daysremaining, 
+        CASE
+            WHEN clh.daysremaining < 0 THEN 'Past Due'::character varying
+            WHEN clh.daysremaining = 0 THEN 'Due Today'::character varying
+            WHEN clh.daysremaining = 1 THEN 'Due in 1 Day'::character varying
+            WHEN clh.daysremaining = 2 THEN 'Due in 2 Days'::character varying
+            WHEN clh.daysremaining = 3 THEN 'Due in 3 Days'::character varying
+            WHEN clh.daysremaining > 3 THEN 'Due in 4+ Days'::character varying
+            ELSE NULL::character varying
+        END AS daysremaininggroup, clh.productfacilityid, clh.productdepartment, clh.productsubdepartment, clh.productline, clh.productid, clh.quantity, 
+        CASE
+            WHEN clh.lastlocation::text = 1::character varying::text AND (clh.locationprocess::text = 'Mill Center'::character varying::text OR clh.locationprocess::text = 'Generate'::character varying::text) THEN 'Milling Center'::character varying
+            ELSE NULL::character varying
+        END AS locationgroup, 
+        CASE
+            WHEN c.orderid IS NOT NULL THEN 1
+            ELSE 0
+        END AS isgenerated, a.locationgroupcheckindate, a.locationgroupdurationinminutes, b.locationgroupassignment, b.locationgroupcart
+   FROM sum.caselocation_activecaseswithlocationhistory clh
+   JOIN sum.caselocation_activecaseslastlocation cll ON clh.orderid = cll.orderid
+   LEFT JOIN ( SELECT clh.orderid, clh.locationcheckindate AS locationgroupcheckindate, date_diff('minute'::character varying::text, clh.locationcheckindate, ( SELECT "max"(caselocation.recordinsertedlocaldts) AS "max"
+              FROM fct.caselocation)) AS locationgroupdurationinminutes
+      FROM sum.caselocation_activecaseswithlocationhistory clh
+   JOIN ( SELECT caselocation_activecaseswithlocationhistory.orderid, min(caselocation_activecaseswithlocationhistory.caselocationsequenceid) AS caselocationsequenceid
+              FROM sum.caselocation_activecaseswithlocationhistory
+             WHERE caselocation_activecaseswithlocationhistory.locationprocess::text = 'Mill Center'::character varying::text AND caselocation_activecaseswithlocationhistory.locationcheckoutdate IS NULL
+             GROUP BY caselocation_activecaseswithlocationhistory.orderid) b ON clh.orderid = b.orderid AND clh.caselocationsequenceid = b.caselocationsequenceid) a ON clh.orderid = a.orderid AND clh.lastlocation::text = 1::character varying::text
+   LEFT JOIN ( SELECT clh.orderid, clh.lastassignedto AS locationgroupassignment, 
+        CASE
+            WHEN charindex('/'::character varying::text, clh.lastassignedto::text) = 2 THEN ('Cart '::character varying::text + "left"(clh.lastassignedto::text, 1))::character varying
+            WHEN charindex('/'::character varying::text, clh.lastassignedto::text) = 3 THEN ('Cart '::character varying::text + "left"(clh.lastassignedto::text, 2))::character varying
+            ELSE NULL::character varying
+        END AS locationgroupcart
+   FROM sum.caselocation_activecaseswithlocationhistory clh
+   JOIN ( SELECT caselocation_activecaseswithlocationhistory.orderid, "max"(caselocation_activecaseswithlocationhistory.caselocationsequenceid) AS caselocationsequenceid
+           FROM sum.caselocation_activecaseswithlocationhistory
+          WHERE (caselocation_activecaseswithlocationhistory.locationprocess::text = 'Mill Center'::character varying::text OR caselocation_activecaseswithlocationhistory.locationprocess::text = 'Generate'::character varying::text) AND caselocation_activecaseswithlocationhistory.lastassignedto IS NOT NULL
+          GROUP BY caselocation_activecaseswithlocationhistory.orderid) b ON clh.orderid = b.orderid AND clh.caselocationsequenceid = b.caselocationsequenceid) b ON clh.orderid = b.orderid AND clh.lastlocation::text = 1::character varying::text
+   LEFT JOIN ( SELECT DISTINCT clh.orderid
+   FROM sum.caselocation_activecaseswithlocationhistory clh
+  WHERE clh.locationprocess::text = 'Generate'::character varying::text) c ON clh.orderid = c.orderid AND clh.lastlocation::text = 1::character varying::text;
+
+
+GRANT RULE, SELECT, INSERT, REFERENCES, TRIGGER, DELETE, UPDATE ON tableau.caselocation_activecaseswithlocationhistory TO _henryc;
+GRANT SELECT, TRIGGER, REFERENCES, RULE, UPDATE, DELETE, INSERT ON tableau.caselocation_activecaseswithlocationhistory TO _tableau;
+GRANT DELETE, INSERT, UPDATE, TRIGGER, RULE, SELECT, REFERENCES ON tableau.caselocation_activecaseswithlocationhistory TO _katiet;
+GRANT UPDATE, DELETE, TRIGGER, SELECT, RULE, REFERENCES, INSERT ON tableau.caselocation_activecaseswithlocationhistory TO _johns;
+GRANT UPDATE, INSERT, SELECT, DELETE, RULE, REFERENCES, TRIGGER ON tableau.caselocation_activecaseswithlocationhistory TO _kelseyo;
+GRANT SELECT ON tableau.caselocation_activecaseswithlocationhistory TO _anthonyo;
+GRANT SELECT ON tableau.caselocation_activecaseswithlocationhistory TO _lucy;
+GRANT DELETE, REFERENCES, INSERT, TRIGGER, SELECT, UPDATE, RULE ON tableau.caselocation_activecaseswithlocationhistory TO cloudbeam;
+
+
+COMMIT;

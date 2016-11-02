@@ -1,0 +1,18 @@
+CREATE OR REPLACE VIEW staging.dim_a_employeetaskpay
+(
+  employeeid,
+  facilityid,
+  facility,
+  departmentid,
+  payrolldepartmentid,
+  taskid,
+  techpay,
+  paylevel,
+  payperunit
+)
+AS 
+ SELECT DISTINCT etp.employeeid, etp.facilityid, etp.facility, etp.departmentid, etp.payrolldepartmentid, etp.taskid, etp.techpay, etp.paylevel, etp.payperunit
+   FROM dim.employeetaskpay etp
+  WHERE etp.taskid::text > ''::character varying::text;
+
+COMMIT;

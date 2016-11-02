@@ -1,0 +1,61 @@
+CREATE OR REPLACE VIEW tableau.opx_a_returnsdetails
+(
+  orderid,
+  dateinvoicedlocaldts,
+  returnorderid,
+  returnorderdateinlocaldts,
+  returnorderdateinvoicedlocaldts,
+  orderproductid,
+  originfacilityid,
+  productionfacilityid,
+  transactiontype,
+  toothstr,
+  quantity,
+  unitprice,
+  discount,
+  remakediscount,
+  totaltax,
+  totalcharge,
+  remakeid,
+  remakereason,
+  remakereasoncategory,
+  bodyshade,
+  isanterior,
+  toothlocation,
+  isbridge,
+  toothtype,
+  bridgesize,
+  productid,
+  pf_productgroup,
+  pf_productline,
+  pf_producttype,
+  pf_departmentid,
+  pf_isactualunit
+)
+AS 
+ SELECT x.orderid, x.dateinvoicedlocaldts, x.returnorderid, x.returnorderdateinlocaldts, x.returnorderdateinvoicedlocaldts, oi.orderproductid, oi.originfacilityid, oi.productionfacilityid, oi.transactiontype, oi.toothstr, abs(oi.quantity) AS quantity, oi.unitprice, COALESCE(oi.discount, 0::numeric::numeric(18,0)) AS discount, COALESCE(oi.remakediscount, 0::numeric::numeric(18,0)) AS remakediscount, COALESCE(oi.totaltax, 0::numeric::numeric(18,0)) AS totaltax, COALESCE(oi.totalcharge, 0::numeric::numeric(18,0)) AS totalcharge, oi.remakeid, oi.remakereason, COALESCE(oi1.remakereasoncategory, 'Other'::character varying::character varying(15)) AS remakereasoncategory, oi.bodyshade, oi1.isanterior, 
+        CASE
+            WHEN oi.toothstr::text > ''::character varying::text AND oi1.isanterior::text = 1::character varying::text THEN 'anterior'::character varying
+            WHEN oi.toothstr::text > ''::character varying::text AND oi1.isanterior::text = 0::character varying::text THEN 'posterior'::character varying
+            ELSE 'n/a'::character varying
+        END AS toothlocation, oi.isbridge, 
+        CASE
+            WHEN oi.toothstr::text > ''::character varying::text AND oi.isbridge::text = 1::character varying::text THEN 'bridge'::character varying
+            WHEN oi.toothstr::text > ''::character varying::text AND oi.isbridge::text = 0::character varying::text THEN 'single'::character varying
+            ELSE 'n/a'::character varying
+        END AS toothtype, 
+        CASE
+            WHEN oi.toothstr::text > ''::character varying::text AND oi.isbridge::text = 1::character varying::text THEN (abs(oi.quantity)::numeric(10,0)::character varying(2)::text + '-unit'::character varying::text)::character varying
+            WHEN oi.toothstr::text > ''::character varying::text AND oi.isbridge::text = 0::character varying::text THEN ' single'::character varying
+            ELSE 'n/a'::character varying
+        END AS bridgesize, oi.productid, p.pf_productgroup, p.pf_productline, p.pf_producttype, p.pf_departmentid, p.pf_isactualunit
+   FROM ( SELECT DISTINCT o.orderid, o.dateinvoicedlocaldts, o1.returnorderid, o1.returnorderdateinlocaldts, o1.returnorderdateinvoicedlocaldts
+           FROM fct."order" o
+      JOIN cal."order" o1 ON o1.orderid = o.orderid
+   JOIN fct.orderitem oi ON oi.orderid = o.orderid
+  WHERE o.ordertypeid = 0 AND o.dateinvoicedlocaldts > '2009-01-01 00:00:00'::timestamp without time zone AND o1.returnorderid IS NOT NULL) x
+   JOIN fct.orderitem oi ON oi.orderid = x.returnorderid AND oi.remakeid::text > ''::character varying::text AND oi.transactiontype::text <> 'Delete'::character varying::text AND oi.quantity <> 0::numeric::numeric(11,5)
+   JOIN cal.orderitem oi1 ON oi1.orderid = oi.orderid AND oi1.orderproductid = oi.orderproductid
+   JOIN dim.products p ON upper(p.productid::text) = upper(oi.productid::text) AND p.pf_productline::text <> 'SHIPPING'::character varying::text;
+
+COMMIT;

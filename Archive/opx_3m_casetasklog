@@ -1,0 +1,33 @@
+CREATE OR REPLACE VIEW tableau.opx_3m_casetasklog
+(
+  taskorderid,
+  taskname,
+  taskfacilityid,
+  taskduedate,
+  taskcompleteddate,
+  taskperformedby,
+  taskemployeepaylevel,
+  totalpaidunits,
+  totalamountcredited,
+  taskerrorcode,
+  taskenteredby,
+  taskentereddate,
+  casetaskslogtypename,
+  casetasktypename,
+  taskschedulingunits,
+  taskproductid,
+  taskpayperunit,
+  originfacilityid,
+  originfacility,
+  dateinlocaldts,
+  dateinvoicedlocaldts,
+  ordertypeid,
+  ordertype
+)
+AS 
+ SELECT ctl.taskorderid, ctl.taskname, ctl.taskfacilityid, ctl.taskduedate, ctl.taskcompleteddate, ctl.taskperformedby, ctl.taskemployeepaylevel, ctl.totalpaidunits, ctl.totalamountcredited, ctl.taskerrorcode, ctl.taskenteredby, ctl.taskentereddate, ctl.casetaskslogtypename, ctl.casetasktypename, ctl.taskschedulingunits, ctl.taskproductid, ctl.taskpayperunit, o.originfacilityid, o.originfacility, o.dateinlocaldts, o.dateinvoicedlocaldts, o.ordertypeid, o.ordertype
+   FROM fct.casetaskslog ctl
+   JOIN fct."order" o ON o.orderid = ctl.taskorderid AND o.ordertypeid = 0
+  WHERE o.dateinlocaldts >= date_add('month'::character varying::text, - 3::bigint, date_trunc('day'::character varying::text, 'now'::character varying::date::timestamp without time zone));
+
+COMMIT;
